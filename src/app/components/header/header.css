@@ -1,0 +1,79 @@
+.header {
+  width: 100%;
+  background-color: #fde047; /* Tailwind yellow-300 */
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.header .brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.header .brand svg {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: #000;
+}
+.header .brand span {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #1a202c;
+  letter-spacing: -0.02em;
+}
+.header .search {
+  flex: 1;
+  margin: 0 2rem;
+  max-width: 28rem;
+}
+.header .search input {
+  width: 100%;
+  border-radius: 9999px;
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  outline: none;
+  transition: box-shadow 0.2s;
+}
+.header .search input:focus {
+  box-shadow: 0 0 0 2px #fde047;
+  border-color: #fde047;
+}
+.header nav {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.header nav ul {
+  display: flex;
+  gap: 1rem;
+  font-weight: 500;
+  color: #374151;
+}
+.header nav ul li a {
+  transition: color 0.2s;
+}
+.header nav ul li a:hover {
+  color: #b45309;
+}
+.header button {
+  margin-left: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 9999px;
+  background: none;
+  transition: background 0.2s;
+  border: none;
+  cursor: pointer;
+}
+.header button:hover {
+  background-color: #fef08a;
+}
+@media (max-width: 768px) {
+  .header .search {
+    margin: 0 0.5rem;
+    max-width: 12rem;
+  }
+  .header nav ul {
+    display: none;
+  }
+}

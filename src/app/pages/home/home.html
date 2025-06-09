@@ -1,0 +1,54 @@
+<div class="w-full flex flex-col items-center justify-center py-8 bg-gradient-to-r from-primary-light to-secondary-light rounded-lg shadow-lg">
+  <div class="relative w-full max-w-2xl mx-auto">
+    <!-- Slides -->
+    <div *ngFor="let quote of quotes; let i = index" [class.hidden]="i !== current" class="transition-all duration-700 ease-in-out">
+      <div class="flex flex-col items-center text-center px-6 py-12">
+        <svg class="w-12 h-12 text-secondary mb-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M9 7h6M9 11h6M9 15h3" />
+        </svg>
+        <p class="text-2xl font-semibold text-accent-dark mb-4 italic">“{{ quote.text }}”</p>
+        <span class="text-accent text-lg font-medium">~ {{ quote.author }}</span>
+      </div>
+    </div>
+    <!-- Left/Right Arrows -->
+    <button (click)="prev()" class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-primary text-primary-dark rounded-full p-2 shadow transition">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M15 19l-7-7 7-7" />
+      </svg>
+    </button>
+    <button (click)="next()" class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-primary text-primary-dark rounded-full p-2 shadow transition">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
+    <!-- Dots -->
+    <div class="flex justify-center mt-4 gap-2">
+      <button *ngFor="let quote of quotes; let i = index"
+        (click)="goTo(i)"
+        [class.bg-secondary]="current === i"
+        class="w-3 h-3 rounded-full bg-accent-light border-2 border-secondary transition"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Shop by Genres -->
+<div class="w-full max-w-5xl mx-auto mt-12">
+  <h2 class="text-2xl font-bold text-primary mb-6">Shop by Genres</h2>
+  <div *ngIf="loadingGenres" class="text-center py-8 text-slate-500">Loading genres...</div>
+  <div *ngIf="genreError" class="text-center py-8 text-red-500">Failed to load genres. Please try again later.</div>
+  <div *ngIf="!loadingGenres && !genreError && genres.length === 0" class="text-center py-8 text-slate-400">No data found.</div>
+  <div *ngIf="!loadingGenres && !genreError && genres.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+    <app-genre-card *ngFor="let genre of genres" [genre]="genre" (select)="onGenreSelect($event)"></app-genre-card>
+  </div>
+</div>
+
+<!-- Products by Genre -->
+<div *ngIf="selectedGenre" class="w-full max-w-5xl mx-auto mt-12">
+  <h2 class="text-2xl font-bold text-primary mb-6">Products in "{{ selectedGenre.name }}"</h2>
+  <div *ngIf="loadingProducts" class="text-center py-8 text-slate-500">Loading products...</div>
+  <div *ngIf="productError" class="text-center py-8 text-red-500">Failed to load products. Please try again later.</div>
+  <div *ngIf="!loadingProducts && !productError && products.length === 0" class="text-center py-8 text-slate-400">No data found.</div>
+  <div *ngIf="!loadingProducts && !productError && products.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+    <app-product-card *ngFor="let product of products" [product]="product"></app-product-card>
+  </div>
+</div>
