@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { GenreService, Genre, ProductCard as ProductCardModel } from '../../services/genre.service';
 import { GenreCard } from '../../components/genre-card/genre-card';
 import { ProductCard as ProductCardComponent } from '../../components/product-card/product-card';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-home',
@@ -34,7 +35,7 @@ export class Home implements OnInit {
   loadingProducts = false;
   productError = false;
 
-  constructor(private genreService: GenreService) {}
+  constructor(private genreService: GenreService, private router: Router) {}
 
   ngOnInit() {
     this.startAutoSlide();
@@ -57,8 +58,7 @@ export class Home implements OnInit {
   }
 
   onGenreSelect(genre: Genre) {
-    this.selectedGenre = genre;
-    this.fetchProductsByGenre(genre.id);
+    this.router.navigate(['/genre', genre.id]);
   }
 
   fetchProductsByGenre(genreId: number) {

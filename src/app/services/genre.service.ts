@@ -17,6 +17,18 @@ export interface ProductCard {
   status: string;
 }
 
+export interface ProductDetails {
+  id: number;
+  name: string;
+  author: string | null;
+  images: string[];
+  description: string | null;
+  price: number;
+  stock: number;
+  status: string;
+  metadata: any;
+}
+
 @Injectable({ providedIn: 'root' })
 export class GenreService {
   constructor(private http: HttpClient) {}
@@ -30,6 +42,12 @@ export class GenreService {
   getProductsByGenre(genreId: number): Observable<ProductCard[]> {
     return this.http.get<ProductCard[]>(`/api/products?genre_id=${genreId}`).pipe(
       catchError(() => of([])) // fallback to empty array
+    );
+  }
+
+  getProductDetails(productId: number): Observable<ProductDetails | null> {
+    return this.http.get<ProductDetails>(`/api/products/${productId}`).pipe(
+      catchError(() => of(null))
     );
   }
 } 
