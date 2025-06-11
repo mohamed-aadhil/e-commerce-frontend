@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>Restock Book</h2>
+<div mat-dialog-content>
+  <div class="mat-body-1 mb-1">
+    <span>Book: <b>{{ data.name }}</b></span>
+  </div>
+  <div class="mat-caption mb-3 text-slate-500">
+    Current Stock: <b>{{ data.stock }}</b>
+  </div>
+  <form #restockForm="ngForm" (ngSubmit)="onConfirm()" autocomplete="off">
+    <mat-form-field appearance="fill" class="w-full mb-3">
+      <mat-label>Quantity to Add <span class="text-red-600">*</span></mat-label>
+      <input matInput type="number" [(ngModel)]="quantity" name="quantity" min="1" required #qty="ngModel" autofocus />
+      <mat-hint>Enter a positive integer</mat-hint>
+      <mat-error *ngIf="qty.invalid && (qty.dirty || qty.touched)">
+        Quantity is required and must be positive.
+      </mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="w-full mb-2">
+      <mat-label>Note (optional)</mat-label>
+      <input matInput type="text" [(ngModel)]="note" name="note" maxlength="100" />
+    </mat-form-field>
+    <div *ngIf="error" class="text-red-600 text-xs mb-2">{{ error }}</div>
+    <div class="flex gap-4 justify-end mt-4">
+      <button mat-stroked-button type="button" (click)="onCancel()" [disabled]="submitting">Cancel</button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="submitting">
+        <mat-progress-spinner *ngIf="submitting" diameter="20" mode="indeterminate"></mat-progress-spinner>
+        <span *ngIf="!submitting">Restock</span>
+      </button>
+    </div>
+  </form>
+</div>

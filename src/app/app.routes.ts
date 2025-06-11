@@ -1,10 +1,19 @@
 import { Routes } from '@angular/router';
-import { Home } from './pages/home/home';
-import { GenreProducts } from './pages/genre-products/genre-products';
-import { ProductDetailsPage } from './pages/product-details/product-details';
+import { Home } from './customer/pages/home/home';
+import { GenreProducts } from './customer/pages/genre-products/genre-products';
+import { ProductDetailsPage } from './customer/pages/product-details/product-details';
 
 export const routes: Routes = [
-  { path: '', component: Home },
-  { path: 'genre/:id', component: GenreProducts },
-  { path: 'product/:id', component: ProductDetailsPage },
+  {
+    path: 'auth',
+    loadChildren: () => import('./auth/auth.routes').then(m => m.authRoutes),
+  },
+  {
+    path: 'admin',
+    loadChildren: () => import('./admin/admin.routes').then(m => m.adminRoutes),
+  },
+  {
+    path: '',
+    loadChildren: () => import('./customer/customer.routes').then(m => m.customerRoutes),
+  },
 ];

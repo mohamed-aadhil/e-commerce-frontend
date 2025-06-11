@@ -1,0 +1,13 @@
+/* Admin Header styles */
+header {
+  z-index: 100;
+}
+
+button:focus {
+  outline: none;
+}
+
+/* Dropdown styles */
+[ng-reflect-ng-if] {
+  min-width: 8rem;
+} 

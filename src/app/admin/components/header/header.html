@@ -1,0 +1,27 @@
+<header class="w-full bg-white shadow flex items-center justify-between px-6 py-3">
+  <!-- Logo and Name -->
+  <div class="flex items-center gap-3">
+    <span class="inline-block">
+      <svg class="w-8 h-8 text-blue-600" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="4" width="20" height="16" rx="2" fill="#fff" stroke="currentColor" stroke-width="2"/>
+        <path d="M6 8h8M6 12h8M6 16h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    </span>
+    <span class="text-xl font-bold text-blue-700 tracking-tight">BookHub Admin</span>
+  </div>
+  <!-- Welcome and Profile -->
+  <div class="flex items-center gap-4 relative">
+    <span class="text-slate-700 font-medium hidden sm:inline">Welcome, {{ adminName }}</span>
+    <button (click)="toggleDropdown()" class="focus:outline-none">
+      <svg class="w-8 h-8 text-slate-600 rounded-full border border-slate-200 p-1 bg-slate-100 hover:bg-blue-100 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 20c0-4 8-4 8-4s8 0 8 4" />
+      </svg>
+    </button>
+    <!-- Dropdown -->
+    <div *ngIf="showDropdown" class="absolute right-0 top-12 bg-white border rounded shadow-md w-40 z-50">
+      <button (click)="logout()" class="w-full text-left px-4 py-2 hover:bg-blue-50 text-slate-700">Logout</button>
+    </div>
+  </div>
+</header> 

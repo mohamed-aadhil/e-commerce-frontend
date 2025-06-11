@@ -1,0 +1,12 @@
+.w-full { width: 100%; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mt-4 { margin-top: 1rem; }
+.flex { display: flex; }
+.gap-4 { gap: 1rem; }
+.justify-end { justify-content: flex-end; }
+.text-xs { font-size: 0.75rem; }
+.text-sm { font-size: 0.875rem; }
+.text-slate-700 { color: #334155; }
+.text-slate-500 { color: #64748b; }
+.text-red-600 { color: #dc2626; }
