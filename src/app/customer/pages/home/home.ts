@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { GenreService, Genre, ProductCard as ProductCardModel } from '../../services/genre.service';
 import { GenreCard } from '../../components/genre-card/genre-card';
 import { Router } from '@angular/router';
-import { Header } from '../../components/header/header';
+import { SharedHeader } from '../../../shared/header/header';
+import { AuthService } from '../../../auth/auth.service';
+import { SharedFooter } from '../../../shared/footer/footer';
 
 @Component({
   selector: 'app-home',
-  imports: [CommonModule, GenreCard, Header],
+  imports: [CommonModule, GenreCard, SharedHeader, SharedFooter],
   templateUrl: './home.html',
 })
 export class Home implements OnInit {
@@ -35,7 +37,15 @@ export class Home implements OnInit {
   loadingProducts = false;
   productError = false;
 
-  constructor(private genreService: GenreService, private router: Router, private cdr: ChangeDetectorRef) {}
+  constructor(private genreService: GenreService, private router: Router, private cdr: ChangeDetectorRef, private authService: AuthService) {
+    this.authService.user$.subscribe((user: any) => {
+      if (user?.role === 'admin') {
+        this.router.navigate(['/admin']);
+      }
+    });
+    this.startAutoSlide();
+    this.fetchGenres();
+  }
 
   ngOnInit() {
     this.startAutoSlide();

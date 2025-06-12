@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanActivateFn } from '@angular/router';
 import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthGuard {
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private authService: AuthService) {}
 
   canActivate: CanActivateFn = async (route, state) => {
     if (this.authService.refreshInProgress) {
@@ -16,7 +16,7 @@ export class AuthGuard {
     if (token && (!requiredRole || user?.['role'] === requiredRole)) {
       return true;
     }
-    this.router.navigate(['/auth/login'], { queryParams: { returnUrl: state.url } });
+    // TODO: Trigger login modal globally here
     return false;
   };
 } 

@@ -320,9 +320,10 @@ export class AddBookComponent implements OnInit {
           this.snackBar.open('Book updated successfully!', 'Close', { duration: 2000 });
           this.router.navigate(['/admin']);
         },
-        error: () => {
-          this.submitError = 'Failed to update book.';
+        error: (err) => {
           this.submitting = false;
+          const msg = err?.error?.error || 'Failed to update book.';
+          this.snackBar.open(msg, 'Close', { duration: 3000 });
         }
       });
       return;
@@ -352,8 +353,9 @@ export class AddBookComponent implements OnInit {
         setTimeout(() => this.router.navigate(['/admin']), 1200);
       },
       error: (err) => {
-        this.submitError = err?.error?.message || 'Failed to add book.';
         this.submitting = false;
+        const msg = err?.error?.error || 'Failed to add book.';
+        this.snackBar.open(msg, 'Close', { duration: 3000 });
       },
       complete: () => {
         this.submitting = false;

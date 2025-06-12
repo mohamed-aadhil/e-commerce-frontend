@@ -1,4 +1,4 @@
-<app-header></app-header>
+<app-shared-header></app-shared-header>
 
 <nav class="text-sm text-slate-600 mb-4 flex items-center gap-2">
   <a routerLink="/" class="hover:underline">Home</a>
@@ -28,3 +28,5 @@
 <div *ngIf="!loading && !error && products.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
   <app-product-card *ngFor="let product of products" [product]="product"></app-product-card>
 </div>
+
+<app-shared-footer></app-shared-footer>

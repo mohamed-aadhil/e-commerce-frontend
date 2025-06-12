@@ -1,17 +1,20 @@
-import { Component } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
 })
 export class LoginComponent {
+  @Input() isModal = false;
+  @Output() close = new EventEmitter<void>();
+  @Output() switchToSignup = new EventEmitter<void>();
   email = '';
   password = '';
   error: string | null = null;
@@ -46,7 +49,6 @@ export class LoginComponent {
       next: (res) => {
         if (res && res.accessToken) {
           this.authService.setAccessToken(res.accessToken);
-          // Redirect based on role or returnUrl
           const user = this.authService.getUser();
           const returnUrl = this.router.routerState.snapshot.root.queryParams['returnUrl'];
           if (returnUrl) {
@@ -54,7 +56,7 @@ export class LoginComponent {
           } else if (user && user['role'] === 'admin') {
             this.router.navigate(['/admin']);
           } else {
-            this.router.navigate(['/']);
+            this.close.emit();
           }
         } else {
           this.error = 'Invalid response from server';
@@ -62,9 +64,17 @@ export class LoginComponent {
         this.loading = false;
       },
       error: (err) => {
-        this.error = err.error?.message || 'Login failed';
+        this.error = err.error?.error || 'Login failed';
         this.loading = false;
       }
     });
+  }
+
+  onClose() {
+    this.close.emit();
+  }
+
+  onSwitchToSignup() {
+    this.switchToSignup.emit();
   }
 } 

@@ -1,29 +1,29 @@
-<app-header></app-header>
-<div class="w-full flex flex-col items-center justify-center py-8 bg-gradient-to-r from-primary-light to-secondary-light rounded-lg shadow-lg">
-  <div class="relative w-full max-w-2xl mx-auto">
+<app-shared-header></app-shared-header>
+<div class="w-full flex flex-col items-center justify-center py-12 bg-gradient-to-r from-primary-light to-secondary-light shadow-lg">
+  <div class="relative w-full max-w-3xl mx-auto">
     <!-- Slides -->
     <div *ngFor="let quote of quotes; let i = index" [class.hidden]="i !== current" class="transition-all duration-700 ease-in-out">
-      <div class="flex flex-col items-center text-center px-6 py-12">
-        <svg class="w-12 h-12 text-secondary mb-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <div class="flex flex-col items-center text-center px-8 py-16">
+        <svg class="w-14 h-14 text-secondary mb-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M9 7h6M9 11h6M9 15h3" />
         </svg>
-        <p class="text-2xl font-semibold text-accent-dark mb-4 italic">“{{ quote.text }}”</p>
+        <p class="text-3xl font-semibold text-accent-dark mb-4 italic">“{{ quote.text }}”</p>
         <span class="text-accent text-lg font-medium">~ {{ quote.author }}</span>
       </div>
     </div>
     <!-- Left/Right Arrows -->
-    <button (click)="prev()" class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-primary text-primary-dark rounded-full p-2 shadow transition">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <button (click)="prev()" class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-primary text-primary-dark rounded-full p-3 shadow transition">
+      <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path d="M15 19l-7-7 7-7" />
       </svg>
     </button>
-    <button (click)="next()" class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-primary text-primary-dark rounded-full p-2 shadow transition">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <button (click)="next()" class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-primary text-primary-dark rounded-full p-3 shadow transition">
+      <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path d="M9 5l7 7-7 7" />
       </svg>
     </button>
     <!-- Dots -->
-    <div class="flex justify-center mt-4 gap-2">
+    <div class="flex justify-center mt-6 gap-2">
       <button *ngFor="let quote of quotes; let i = index"
         (click)="goTo(i)"
         [class.bg-secondary]="current === i"
@@ -41,5 +41,6 @@
     <app-genre-card *ngFor="let genre of genres" [genre]="genre" (select)="onGenreSelect($event)"></app-genre-card>
   </div>
 </div>
+<app-shared-footer></app-shared-footer>
 
 

@@ -5,15 +5,21 @@ import { ProductDetailsPage } from './customer/pages/product-details/product-det
 
 export const routes: Routes = [
   {
-    path: 'auth',
-    loadChildren: () => import('./auth/auth.routes').then(m => m.authRoutes),
-  },
-  {
     path: 'admin',
     loadChildren: () => import('./admin/admin.routes').then(m => m.adminRoutes),
   },
   {
     path: '',
     loadChildren: () => import('./customer/customer.routes').then(m => m.customerRoutes),
+  },
+  {
+    path: 'auth',
+    redirectTo: '/',
+    pathMatch: 'full',
+  },
+  {
+    path: 'auth/**',
+    redirectTo: '/',
+    pathMatch: 'full',
   },
 ];

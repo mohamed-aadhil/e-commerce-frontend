@@ -29,9 +29,8 @@ export class AuthService {
   }
 
   logout(): Observable<any> {
-    // Implement logout logic
     this.clearAccessToken();
-    return this.http.post('/api/v1/auth/logout', {});
+    return this.http.post('/api/v1/auth/logout', {}, { withCredentials: true });
   }
 
   setAccessToken(token: string) {

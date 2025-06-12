@@ -4,13 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { GenreService, Genre, ProductCard } from '../../services/genre.service';
 import { ProductCard as ProductCardComponent } from '../../components/product-card/product-card';
-import { Header } from '../../components/header/header';
+import { SharedHeader } from '../../../shared/header/header';
 import { RouterModule } from '@angular/router';
+import { SharedFooter } from '../../../shared/footer/footer';
 
 @Component({
   selector: 'app-genre-products',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProductCardComponent, Header, RouterModule],
+  imports: [CommonModule, FormsModule, ProductCardComponent, SharedHeader, SharedFooter, RouterModule],
   templateUrl: './genre-products.html',
   styleUrl: './genre-products.css'
 })

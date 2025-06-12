@@ -3,7 +3,7 @@
 
   <!-- Stats Cards -->
   <div *ngIf="loadingStats" class="col-span-4 text-center py-8 text-slate-400">Loading stats...</div>
-  <div *ngIf="errorStats" class="col-span-4 text-center py-8 text-red-500">Failed to load stats.</div>
+  <div *ngIf="errorStats" class="col-span-4 text-center py-8 text-red-500">{{ errorMsgStats }}</div>
   <div *ngIf="!loadingStats && !errorStats && stats" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <div class="bg-white rounded-lg shadow p-6 flex flex-col items-center">
       <div class="text-slate-500 text-sm mb-1">Total Books</div>
@@ -43,7 +43,7 @@
       </div>
     </div>
     <div *ngIf="loadingBooks" class="text-center py-8 text-slate-400">Loading books...</div>
-    <div *ngIf="errorBooks" class="text-center py-8 text-red-500">Failed to load books.</div>
+    <div *ngIf="errorBooks" class="text-center py-8 text-red-500">{{ errorMsgBooks }}</div>
     <table *ngIf="!loadingBooks && !errorBooks && filteredBooks.length > 0" class="min-w-full divide-y divide-slate-200">
       <thead class="bg-slate-50">
         <tr>

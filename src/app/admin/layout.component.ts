@@ -1,13 +1,13 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { AdminHeader } from './components/header/header';
+import { SharedHeader } from '../shared/header/header';
 
 @Component({
   selector: 'admin-layout',
   standalone: true,
-  imports: [RouterModule, AdminHeader],
+  imports: [RouterModule, SharedHeader],
   template: `
-    <admin-header></admin-header>
+    <app-shared-header></app-shared-header>
     <router-outlet></router-outlet>
   `
 })

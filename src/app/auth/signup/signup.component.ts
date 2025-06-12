@@ -1,17 +1,20 @@
-import { Component } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './signup.component.html',
   styleUrl: './signup.component.css'
 })
 export class SignupComponent {
+  @Input() isModal = false;
+  @Output() close = new EventEmitter<void>();
+  @Output() switchToLogin = new EventEmitter<void>();
   name = '';
   email = '';
   password = '';
@@ -32,6 +35,11 @@ export class SignupComponent {
     this.emailTouched = true;
     this.passwordTouched = true;
     this.error = null;
+    // Prevent signup for admin emails (e.g., admin@domain.com or any logic you want)
+    if (this.email && this.email.toLowerCase().includes('admin')) {
+      this.error = 'Signup is only for customers. Admins must use their own credentials.';
+      return;
+    }
     if (!this.name || !this.email || !this.password) {
       this.error = 'Name, email, and password are required.';
       return;
@@ -49,15 +57,16 @@ export class SignupComponent {
       next: (res) => {
         if (res && res.accessToken) {
           this.authService.setAccessToken(res.accessToken);
-          // Redirect based on role or returnUrl
           const user = this.authService.getUser();
           const returnUrl = this.router.routerState.snapshot.root.queryParams['returnUrl'];
           if (returnUrl) {
             this.router.navigateByUrl(returnUrl);
           } else if (user && user['role'] === 'admin') {
-            this.router.navigate(['/admin']);
+            this.error = 'Signup is only for customers. Admins must use their own credentials.';
+            this.loading = false;
+            return;
           } else {
-            this.router.navigate(['/']);
+            this.close.emit();
           }
         } else {
           this.error = 'Invalid response from server';
@@ -65,9 +74,17 @@ export class SignupComponent {
         this.loading = false;
       },
       error: (err) => {
-        this.error = err.error?.message || 'Signup failed';
+        this.error = err.error?.error || 'Signup failed';
         this.loading = false;
       }
     });
+  }
+
+  onClose() {
+    this.close.emit();
+  }
+
+  onSwitchToLogin() {
+    this.switchToLogin.emit();
   }
 } 

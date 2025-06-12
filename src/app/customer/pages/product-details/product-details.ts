@@ -2,13 +2,14 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { GenreService, ProductDetails } from '../../services/genre.service';
-import { Header } from '../../components/header/header';
+import { SharedHeader } from '../../../shared/header/header';
 import { RouterModule } from '@angular/router';
+import { SharedFooter } from '../../../shared/footer/footer';
 
 @Component({
   selector: 'app-product-details',
   standalone: true,
-  imports: [CommonModule, Header, RouterModule],
+  imports: [CommonModule, SharedHeader, SharedFooter, RouterModule],
   templateUrl: './product-details.html',
   styleUrl: './product-details.css'
 })

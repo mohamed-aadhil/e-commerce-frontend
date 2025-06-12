@@ -12,7 +12,7 @@ import { RestockDialog, RestockDialogData } from '../../components/restock-dialo
 @Component({
   selector: 'admin-inventory-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, MatSnackBarModule, RestockDialog],
+  imports: [CommonModule, FormsModule, RouterModule, MatSnackBarModule],
   templateUrl: './inventory-dashboard.html',
   styleUrl: './inventory-dashboard.css'
 })
@@ -23,6 +23,8 @@ export class InventoryDashboard implements OnInit, OnDestroy {
   loadingBooks = true;
   errorStats = false;
   errorBooks = false;
+  errorMsgStats: string | null = null;
+  errorMsgBooks: string | null = null;
   searchTerm: string = '';
   private userSub: Subscription | null = null;
 
@@ -51,6 +53,7 @@ export class InventoryDashboard implements OnInit, OnDestroy {
   fetchStats() {
     this.loadingStats = true;
     this.errorStats = false;
+    this.errorMsgStats = null;
     this.inventoryService.getStats().subscribe({
       next: (stats) => {
         console.log('Stats response:', stats);
@@ -58,8 +61,9 @@ export class InventoryDashboard implements OnInit, OnDestroy {
         this.loadingStats = false;
         this.cdr.markForCheck();
       },
-      error: () => {
+      error: (err) => {
         this.errorStats = true;
+        this.errorMsgStats = err?.error?.error || 'Failed to load stats.';
         this.loadingStats = false;
         this.cdr.markForCheck();
       },
@@ -73,6 +77,7 @@ export class InventoryDashboard implements OnInit, OnDestroy {
   fetchBooks() {
     this.loadingBooks = true;
     this.errorBooks = false;
+    this.errorMsgBooks = null;
     this.inventoryService.getBooks().subscribe({
       next: (books) => {
         console.log('Books response:', books);
@@ -80,8 +85,9 @@ export class InventoryDashboard implements OnInit, OnDestroy {
         this.loadingBooks = false;
         this.cdr.markForCheck();
       },
-      error: () => {
+      error: (err) => {
         this.errorBooks = true;
+        this.errorMsgBooks = err?.error?.error || 'Failed to load books.';
         this.loadingBooks = false;
         this.cdr.markForCheck();
       },
@@ -124,8 +130,9 @@ export class InventoryDashboard implements OnInit, OnDestroy {
             this.snackBar.open('Book restocked successfully!', 'Close', { duration: 2000 });
             this.fetchBooks();
           },
-          error: () => {
-            this.snackBar.open('Failed to restock book.', 'Close', { duration: 2000 });
+          error: (err) => {
+            const msg = err?.error?.error || 'Failed to restock book.';
+            this.snackBar.open(msg, 'Close', { duration: 2000 });
           }
         });
       }
@@ -139,8 +146,9 @@ export class InventoryDashboard implements OnInit, OnDestroy {
           this.snackBar.open('Book deleted successfully!', 'Close', { duration: 2000 });
           this.fetchBooks();
         },
-        error: () => {
-          this.snackBar.open('Failed to delete book.', 'Close', { duration: 2000 });
+        error: (err) => {
+          const msg = err?.error?.error || 'Failed to delete book.';
+          this.snackBar.open(msg, 'Close', { duration: 2000 });
         }
       });
     }

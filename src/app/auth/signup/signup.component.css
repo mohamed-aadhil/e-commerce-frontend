@@ -1,1 +1,31 @@
 /* Signup form styles will go here */ 
+.signup-modal-content {
+  max-width: 400px;
+  width: 90vw;
+  padding: 2rem 1.5rem;
+  box-sizing: border-box;
+}
+@media (max-width: 500px) {
+  .signup-modal-content {
+    padding: 1rem 0.5rem;
+    max-width: 98vw;
+  }
+  .modal-close {
+    top: 0.25rem;
+    right: 0.25rem;
+    font-size: 1.5rem;
+  }
+}
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  font-size: 1rem;
+  padding: 0.75rem 0.75rem;
+}
+button[type="submit"] {
+  font-size: 1rem;
+  padding: 0.75rem 0;
+}
+.border-red-500 {
+  border-color: #ef4444 !important;
+} 
