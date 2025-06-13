@@ -1,8 +1,19 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { AuthService } from '../auth.service';
+import { AuthService, ApiError } from '../auth.service';
+
+interface LoginForm {
+  email: string;
+  password: string;
+}
+
+interface FormErrors {
+  email?: string;
+  password?: string;
+  general?: string;
+}
 
 @Component({
   selector: 'app-login',
@@ -15,59 +26,107 @@ export class LoginComponent {
   @Input() isModal = false;
   @Output() close = new EventEmitter<void>();
   @Output() switchToSignup = new EventEmitter<void>();
-  email = '';
-  password = '';
-  error: string | null = null;
+  form: LoginForm = {
+    email: '',
+    password: ''
+  };
+  
+  errors: FormErrors = {};
   loading = false;
   emailTouched = false;
   passwordTouched = false;
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService, 
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {}
 
-  validateEmail(email: string): boolean {
-    return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+  private validateForm(): boolean {
+    this.errors = {};
+    let isValid = true;
+
+    if (!this.form.email) {
+      this.errors['email'] = 'Email is required';
+      isValid = false;
+    } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(this.form.email)) {
+      this.errors['email'] = 'Please enter a valid email address';
+      isValid = false;
+    }
+
+    if (!this.form.password) {
+      this.errors['password'] = 'Password is required';
+      isValid = false;
+    } else if (this.form.password.length < 6) {
+      this.errors['password'] = 'Password must be at least 6 characters';
+      isValid = false;
+    }
+
+    return isValid;
   }
 
   onSubmit() {
     this.emailTouched = true;
     this.passwordTouched = true;
-    this.error = null;
-    if (!this.email || !this.password) {
-      this.error = 'Email and password are required.';
+    
+    if (!this.validateForm()) {
       return;
     }
-    if (!this.validateEmail(this.email)) {
-      this.error = 'Please enter a valid email address.';
-      return;
-    }
-    if (this.password.length < 6) {
-      this.error = 'Password must be at least 6 characters.';
-      return;
-    }
+    
     this.loading = true;
-    this.authService.login(this.email, this.password).subscribe({
+    this.errors = {};
+    this.cdr.detectChanges(); // Trigger change detection
+    
+    this.authService.login(this.form.email, this.form.password).subscribe({
       next: (res) => {
-        if (res && res.accessToken) {
-          this.authService.setAccessToken(res.accessToken);
-          const user = this.authService.getUser();
-          const returnUrl = this.router.routerState.snapshot.root.queryParams['returnUrl'];
-          if (returnUrl) {
-            this.router.navigateByUrl(returnUrl);
-          } else if (user && user['role'] === 'admin') {
-            this.router.navigate(['/admin']);
-          } else {
-            this.close.emit();
-          }
+        this.loading = false;
+        if (res?.accessToken) {
+          this.handleSuccessfulLogin(res);
         } else {
-          this.error = 'Invalid response from server';
+          this.errors = { general: 'Invalid response from server' };
+          this.cdr.detectChanges(); // Trigger change detection
         }
-        this.loading = false;
       },
-      error: (err) => {
-        this.error = err.error?.error || 'Login failed';
+      error: (error) => {
+        console.log('Login error received:', error);
         this.loading = false;
+        this.errors = { general: 'Invalid email or password. Please try again.' };
+        console.log('Current errors after setting:', this.errors);
+        this.cdr.detectChanges(); // Trigger change detection
       }
     });
+  }
+  
+  private handleSuccessfulLogin(response: any) {
+    this.authService.setAccessToken(response.accessToken);
+    const user = this.authService.getUser();
+    const returnUrl = this.router.routerState.snapshot.root.queryParams['returnUrl'];
+    
+    if (returnUrl) {
+      this.router.navigateByUrl(returnUrl);
+    } else if (user?.role === 'admin') {
+      this.router.navigate(['/admin']);
+    } else {
+      this.close.emit();
+    }
+  }
+  
+  private handleLoginError(error: any) {
+    console.log('Raw error object:', error);
+    
+    // Always create a new errors object to trigger change detection
+    this.errors = { general: 'Invalid email or password. Please try again.' };
+    
+    // Force change detection
+    setTimeout(() => {
+      this.errors = { ...this.errors };
+    });
+  }
+  
+  onFieldBlur(field: keyof LoginForm) {
+    if (field === 'email') this.emailTouched = true;
+    if (field === 'password') this.passwordTouched = true;
+    this.validateForm();
   }
 
   onClose() {

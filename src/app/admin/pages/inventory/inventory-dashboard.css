@@ -1,1 +1,16 @@
 /* Inventory Dashboard styles will go here */ 
+
+mat-paginator {
+    background: transparent;
+    margin-top: 1rem;
+  }
+  
+  /* Optional: Add some spacing around the paginator */
+  .mat-paginator-container {
+    padding: 8px;
+  }
+  
+  /* Optional: Style the page size selector */
+  .mat-paginator-page-size {
+    margin-right: 8px;
+  }

@@ -1,0 +1,93 @@
+/* Search bar container */
+:host {
+  display: block;
+  width: 100%;
+  position: relative;
+}
+
+/* Input field */
+input {
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Buttons */
+button {
+  transition: all 0.2s ease-in-out;
+  outline: none;
+}
+
+button:active {
+  transform: scale(0.9);
+}
+
+/* Focus states */
+input:focus {
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Search results dropdown */
+.shadow-lg {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 0 4px 4px 0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Hover effects */
+.hover\:bg-gray-100:hover {
+  background-color: #f7fafc;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  input {
+    padding-left: 1rem;
+    padding-right: 2.5rem;
+    font-size: 0.875rem;
+  }
+  
+  button {
+    right: 0.5rem;
+  }
+  
+  .max-h-96 {
+    max-height: 24rem;
+  }
+}
+
+/* Transition effects */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.duration-200 {
+  transition-duration: 200ms;
+}

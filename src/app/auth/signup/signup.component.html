@@ -1,62 +1,266 @@
-<div *ngIf="isModal" class="modal-overlay">
-  <div class="modal-blur"></div>
-  <div class="modal-content signup-modal-content">
-    <button class="modal-close" (click)="onClose()">&times;</button>
-    <h2 class="text-2xl font-bold mb-6 text-center">Sign Up</h2>
-    <form (ngSubmit)="onSubmit()" *ngIf="!loading" #signupForm="ngForm" autocomplete="off">
-      <div class="mb-4">
-        <label class="block mb-1 font-medium">Name</label>
-        <input type="text" [(ngModel)]="name" name="name" required (blur)="nameTouched = true" class="w-full border rounded px-3 py-2" [ngClass]="{'border-red-500': nameTouched && !name}" />
-        <div *ngIf="nameTouched && !name" class="text-red-600 text-xs mt-1">Name is required.</div>
+<!-- Modal Version -->
+<div *ngIf="isModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" (click)="onClose()"></div>
+  <div class="relative w-full max-w-md bg-white rounded-lg shadow-xl transform transition-all">
+    <button 
+      class="absolute top-4 right-4 text-gray-400 hover:text-gray-500 focus:outline-none"
+      (click)="onClose()"
+    >
+      <span class="sr-only">Close</span>
+      <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+    
+    <div class="p-6">
+      <h2 class="text-2xl font-bold mb-6 text-center text-gray-900">Create an Account</h2>
+      <form (ngSubmit)="$event.preventDefault(); onSubmit()" class="space-y-6">
+      <!-- Success Message -->
+      <div *ngIf="registrationSuccess" class="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-md">
+        <div class="flex items-center">
+          <svg class="h-5 w-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+          </svg>
+          <span class="font-medium">Registration successful! Redirecting you...</span>
+        </div>
       </div>
-      <div class="mb-4">
-        <label class="block mb-1 font-medium">Email</label>
-        <input type="email" [(ngModel)]="email" name="email" required (blur)="emailTouched = true" class="w-full border rounded px-3 py-2" [ngClass]="{'border-red-500': emailTouched && (!validateEmail(email) || !email)}" />
-        <div *ngIf="emailTouched && !email" class="text-red-600 text-xs mt-1">Email is required.</div>
-        <div *ngIf="emailTouched && email && !validateEmail(email)" class="text-red-600 text-xs mt-1">Please enter a valid email address.</div>
+      
+      <!-- Error Message -->
+      <div *ngIf="errors && (errors['general'] || errors['email'])" class="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md">
+        <div class="flex items-center">
+          <svg class="h-5 w-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+          </svg>
+          <span class="font-medium">{{ errors['general'] || errors['email'] }}</span>
+        </div>
       </div>
-      <div class="mb-4">
-        <label class="block mb-1 font-medium">Password</label>
-        <input type="password" [(ngModel)]="password" name="password" required (blur)="passwordTouched = true" class="w-full border rounded px-3 py-2" [ngClass]="{'border-red-500': passwordTouched && (password.length < 6)}" />
-        <div *ngIf="passwordTouched && !password" class="text-red-600 text-xs mt-1">Password is required.</div>
-        <div *ngIf="passwordTouched && password.length > 0 && password.length < 6" class="text-red-600 text-xs mt-1">Password must be at least 6 characters.</div>
+      
+      <!-- Name Field -->
+      <div>
+        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+        <input
+          id="name"
+          type="text"
+          [(ngModel)]="form.name"
+          name="name"
+          required
+          (blur)="onFieldBlur('name')"
+          [class.border-red-500]="errors['name']"
+          class="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+        <div *ngIf="errors['name']" class="mt-1 text-sm text-red-600">
+          {{ errors['name'] }}
+        </div>
       </div>
-      <div *ngIf="error" class="text-red-600 mb-2">{{ error }}</div>
-      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition" [disabled]="!name || !email || !validateEmail(email) || !password || password.length < 6">Sign Up</button>
+      
+      <!-- Email Field -->
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <input
+          id="email"
+          type="email"
+          [(ngModel)]="form.email"
+          name="email"
+          required
+          (blur)="onFieldBlur('email')"
+          [class.border-red-500]="errors['email']"
+          class="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+        <div *ngIf="errors['email']" class="mt-1 text-sm text-red-600">
+          {{ errors['email'] }}
+        </div>
+      </div>
+      
+      <!-- Password Field -->
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <input
+          id="password"
+          type="password"
+          [(ngModel)]="form.password"
+          name="password"
+          required
+          (blur)="onFieldBlur('password')"
+          [class.border-red-500]="errors['password']"
+          class="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+        <div *ngIf="errors['password']" class="mt-1 text-sm text-red-600">
+          {{ errors['password'] }}
+        </div>
+      </div>
+      
+      <!-- Confirm Password Field -->
+      <div>
+        <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+        <input
+          id="confirmPassword"
+          type="password"
+          [(ngModel)]="form.confirmPassword"
+          name="confirmPassword"
+          required
+          (blur)="onFieldBlur('confirmPassword')"
+          [class.border-red-500]="errors['confirmPassword']"
+          class="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+        <div *ngIf="errors['confirmPassword']" class="mt-1 text-sm text-red-600">
+          {{ errors['confirmPassword'] }}
+        </div>
+      </div>
+      
+      <!-- Submit Button -->
+      <div class="pt-2">
+        <button
+          type="submit"
+          [disabled]="loading"
+          class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+        >
+          Create Account
+        </button>
+      </div>
     </form>
-    <div *ngIf="loading" class="text-center py-4 text-blue-600">Signing up...</div>
-    <div class="text-center mt-4 text-sm">
-      Already have an account?
-      <a href="#" (click)="onSwitchToLogin(); $event.preventDefault();" class="text-blue-600 hover:underline">Sign in</a>
+    
+    <!-- Loading State -->
+    <div *ngIf="loading" class="text-center py-6">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <p class="mt-2 text-sm text-gray-600">Creating your account...</p>
+    </div>
+    
+    <!-- Sign In Link -->
+    <div class="mt-4 text-center text-sm">
+      <span class="text-gray-600">Already have an account? </span>
+      <button type="button" (click)="onSwitchToLogin($event)" class="text-blue-600 hover:text-blue-800 font-medium">
+        Sign in
+      </button>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div *ngIf="loading" class="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50">
+      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
     </div>
   </div>
 </div>
-<div *ngIf="!isModal">
-  <div class="max-w-md mx-auto mt-16 p-8 bg-white rounded shadow">
-    <h2 class="text-2xl font-bold mb-6 text-center">Sign Up</h2>
-    <form (ngSubmit)="onSubmit()" *ngIf="!loading">
-      <div class="mb-4">
-        <label class="block mb-1 font-medium">Name</label>
-        <input type="text" [(ngModel)]="name" name="name" required (blur)="nameTouched = true" class="w-full border rounded px-3 py-2" />
-        <div *ngIf="nameTouched && !name" class="text-red-600 text-xs mt-1">Name is required.</div>
-      </div>
-      <div class="mb-4">
-        <label class="block mb-1 font-medium">Email</label>
-        <input type="email" [(ngModel)]="email" name="email" required (blur)="emailTouched = true" class="w-full border rounded px-3 py-2" />
-        <div *ngIf="emailTouched && !validateEmail(email) && email" class="text-red-600 text-xs mt-1">Please enter a valid email address.</div>
-      </div>
-      <div class="mb-4">
-        <label class="block mb-1 font-medium">Password</label>
-        <input type="password" [(ngModel)]="password" name="password" required (blur)="passwordTouched = true" class="w-full border rounded px-3 py-2" />
-        <div *ngIf="passwordTouched && password.length > 0 && password.length < 6" class="text-red-600 text-xs mt-1">Password must be at least 6 characters.</div>
-      </div>
-      <div *ngIf="error" class="text-red-600 mb-2">{{ error }}</div>
-      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Sign Up</button>
-    </form>
-    <div *ngIf="loading" class="text-center py-4 text-blue-600">Signing up...</div>
-    <div class="text-center mt-4 text-sm">
-      Already have an account?
-      <a href="#" (click)="onSwitchToLogin(); $event.preventDefault();" class="text-blue-600 hover:underline">Sign in</a>
+
+<!-- Non-Modal Version -->
+<div *ngIf="!isModal" class="max-w-md mx-auto my-12 p-8 bg-white rounded-lg shadow-md">
+  <h2 class="text-2xl font-bold mb-8 text-center text-gray-800">Create an Account</h2>
+  
+  <form (ngSubmit)="onSubmit()" class="space-y-6">
+    <!-- General Error Message -->
+    <div *ngIf="errors['general']" class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded">
+      <p class="font-medium">Error</p>
+      <p class="text-sm">{{ errors['general'] }}</p>
     </div>
+    
+    <!-- Name Field -->
+    <div class="mb-4">
+      <label for="name" class="block mb-1 font-medium">Full Name</label>
+      <input
+        id="name"
+        type="text"
+        [(ngModel)]="form.name"
+        name="name"
+        required
+        (blur)="onFieldBlur('name')"
+        [class.border-red-500]="errors['name']"
+        class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <div *ngIf="errors['name']" class="text-red-600 text-sm mt-1">
+        {{ errors['name'] }}
+      </div>
+    </div>
+    
+    <!-- Email Field -->
+    <div class="mb-4">
+      <label for="email" class="block mb-1 font-medium">Email</label>
+      <input
+        id="email"
+        type="email"
+        [(ngModel)]="form.email"
+        name="email"
+        required
+        (blur)="onFieldBlur('email')"
+        [class.border-red-500]="errors['email']"
+        class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <div *ngIf="errors['email']" class="text-red-600 text-sm mt-1">
+        {{ errors['email'] }}
+      </div>
+    </div>
+    
+    <!-- Password Field -->
+    <div class="mb-4">
+      <label for="password" class="block mb-1 font-medium">Password</label>
+      <input
+        id="password"
+        type="password"
+        [(ngModel)]="form.password"
+        name="password"
+        required
+        (blur)="onFieldBlur('password')"
+        [class.border-red-500]="errors['password']"
+        class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <div *ngIf="errors['password']" class="text-red-600 text-sm mt-1">
+        {{ errors['password'] }}
+      </div>
+    </div>
+    
+    <!-- Confirm Password Field -->
+    <div class="mb-6">
+      <label for="confirmPassword" class="block mb-1 font-medium">Confirm Password</label>
+      <input
+        id="confirmPassword"
+        type="password"
+        [(ngModel)]="form.confirmPassword"
+        name="confirmPassword"
+        required
+        (blur)="onFieldBlur('confirmPassword')"
+        [class.border-red-500]="errors['confirmPassword']"
+        class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <div *ngIf="errors['confirmPassword']" class="text-red-600 text-sm mt-1">
+        {{ errors['confirmPassword'] }}
+      </div>
+    </div>
+    
+    <!-- Form Fields (Hidden on success) -->
+    <div [class.hidden]="registrationSuccess">
+      <!-- Submit Button -->
+      <div class="relative">
+        <button
+          type="submit"
+          [disabled]="loading"
+          class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-75 disabled:cursor-not-allowed"
+        >
+          <span [class.invisible]="loading">Create Account</span>
+          <span *ngIf="loading" class="absolute inset-0 flex items-center justify-center">
+            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </span>
+        </button>
+      </div>
+    </div>
+  </form>
+  
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-8">
+    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    <p class="mt-2 text-sm text-gray-600">Creating your account...</p>
   </div>
-</div> 
+  
+  <!-- Sign In Link -->
+  <div class="mt-6 text-center text-sm">
+    <p class="text-gray-600">
+      Already have an account?
+      <a 
+        href="#" 
+        (click)="onSwitchToLogin($event)" 
+        class="font-medium text-blue-600 hover:text-blue-500 ml-1"
+      >
+        Sign in
+      </a>
+    </p>
+  </div>
+</div>

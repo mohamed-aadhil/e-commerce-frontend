@@ -1,7 +1,19 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, BehaviorSubject, catchError, throwError } from 'rxjs';
 import { jwtDecode } from 'jwt-decode';
+
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken?: string;
+  user?: any;
+}
+
+export interface ApiError {
+  status: number;
+  message: string;
+  errors?: { [key: string]: string[] };
+}
 
 export interface DecodedToken {
   name: string;
@@ -18,14 +30,16 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
-  login(email: string, password: string): Observable<any> {
-    // Implement login logic
-    return this.http.post('/api/v1/auth/login', { email, password });
+  login(email: string, password: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>('/api/v1/auth/login', { email, password }).pipe(
+      catchError(this.handleError)
+    );
   }
 
-  signup(data: any): Observable<any> {
-    // Implement signup logic
-    return this.http.post('/api/v1/auth/register', data);
+  signup(data: any): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>('/api/v1/auth/register', data).pipe(
+      catchError(this.handleError)
+    );
   }
 
   logout(): Observable<any> {
@@ -52,27 +66,87 @@ export class AuthService {
     this.userSubject.next(null);
   }
 
+  private handleError(error: HttpErrorResponse) {
+    console.error('AuthService error:', error);
+    
+    let errorMessage = 'An error occurred';
+    let errorDetails: any = {};
+    
+    if (error.error instanceof ErrorEvent) {
+      // Client-side error
+      errorMessage = error.error.message;
+    } else {
+      // Server-side error
+      const serverError = error.error;
+      
+      // Handle 409 Conflict (duplicate email)
+      if (error.status === 409) {
+        errorMessage = serverError?.message || 'This email is already registered';
+        errorDetails = { email: errorMessage };
+      } 
+      // Handle 400 Bad Request
+      else if (error.status === 400) {
+        errorMessage = serverError?.message || 'Invalid request';
+        if (serverError?.errors) {
+          errorDetails = serverError.errors;
+        }
+      } 
+      // Handle server errors
+      else if (error.status >= 500) {
+        errorMessage = 'Server error. Please try again later.';
+      } 
+      // Handle other errors
+      else {
+        errorMessage = serverError?.message || error.statusText || 'An error occurred';
+      }
+      
+      // If we have a validation error object, use it
+      if (serverError?.error) {
+        errorDetails = serverError.error;
+      }
+    }
+    
+    const errorResponse = {
+      status: error.status,
+      message: errorMessage,
+      errors: errorDetails,
+      error: error.error
+    };
+    
+    console.log('AuthService error response:', errorResponse);
+    return throwError(() => errorResponse);
+  }
+
   refreshToken(): Promise<void> {
     if (this.refreshInProgress) return this.refreshInProgress;
+    
     this.refreshInProgress = new Promise((resolve) => {
-      this.http.post<any>('/api/v1/auth/refresh', {}).subscribe({
-        next: (res) => {
-          if (res && res.accessToken) {
-            this.setAccessToken(res.accessToken);
-          } else {
+      this.http.post<AuthResponse>('/api/v1/auth/refresh', {})
+        .pipe(
+          catchError(error => {
             this.clearAccessToken();
+            return throwError(() => error);
+          })
+        )
+        .subscribe({
+          next: (res) => {
+            if (res?.accessToken) {
+              this.setAccessToken(res.accessToken);
+            } else {
+              this.clearAccessToken();
+            }
+            resolve();
+          },
+          error: () => {
+            this.clearAccessToken();
+            resolve();
+          },
+          complete: () => {
+            this.refreshInProgress = null;
           }
-          resolve();
-        },
-        error: () => {
-          this.clearAccessToken();
-          resolve();
-        },
-        complete: () => {
-          this.refreshInProgress = null;
-        }
-      });
+        });
     });
+    
     return this.refreshInProgress;
   }
 

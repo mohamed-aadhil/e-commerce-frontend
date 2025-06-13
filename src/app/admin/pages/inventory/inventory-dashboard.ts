@@ -8,11 +8,12 @@ import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../auth/auth.service';
 import { MatDialog } from '@angular/material/dialog';
 import { RestockDialog, RestockDialogData } from '../../components/restock-dialog/restock-dialog';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
 @Component({
   selector: 'admin-inventory-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, MatSnackBarModule],
+  imports: [CommonModule, FormsModule, RouterModule, MatSnackBarModule, MatPaginatorModule],
   templateUrl: './inventory-dashboard.html',
   styleUrl: './inventory-dashboard.css'
 })
@@ -27,7 +28,10 @@ export class InventoryDashboard implements OnInit, OnDestroy {
   errorMsgBooks: string | null = null;
   searchTerm: string = '';
   private userSub: Subscription | null = null;
-
+  length = 0;
+  pageSize = 10;
+  pageSizeOptions = [5, 10, 20, 50];
+  pageIndex = 0;
   constructor(
     private inventoryService: InventoryService,
     private authService: AuthService,
@@ -74,14 +78,32 @@ export class InventoryDashboard implements OnInit, OnDestroy {
     });
   }
 
+  onPageChange(event: PageEvent) {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.fetchBooks();
+  }
+  
   fetchBooks() {
     this.loadingBooks = true;
     this.errorBooks = false;
     this.errorMsgBooks = null;
-    this.inventoryService.getBooks().subscribe({
-      next: (books) => {
-        console.log('Books response:', books);
-        this.books = Array.isArray(books) ? books : [];
+    
+    this.inventoryService.getBooks(
+      this.pageIndex + 1,  // +1 because Material uses 0-based index, our API uses 1-based
+      this.pageSize,
+      this.searchTerm
+    ).subscribe({
+      next: (response) => {
+        if (!response || !response.data) {
+          this.books = [];
+          this.length = 0;
+          this.errorBooks = true;
+          this.errorMsgBooks = 'No data received from server';
+        } else {
+          this.books = response.data || [];
+          this.length = response.pagination?.total || 0;
+        }
         this.loadingBooks = false;
         this.cdr.markForCheck();
       },
@@ -89,20 +111,25 @@ export class InventoryDashboard implements OnInit, OnDestroy {
         this.errorBooks = true;
         this.errorMsgBooks = err?.error?.error || 'Failed to load books.';
         this.loadingBooks = false;
-        this.cdr.markForCheck();
-      },
-      complete: () => {
-        this.loadingBooks = false;
+        this.books = []; // Clear books on error
+        this.length = 0; // Reset length on error
         this.cdr.markForCheck();
       }
     });
   }
 
+  get totalPages(): number {
+    return Math.ceil(this.length / this.pageSize);
+  }
+
   get filteredBooks(): InventoryBook[] {
     if (!this.searchTerm) return this.books;
-    return this.books.filter(book =>
-      book.productId.toLowerCase().includes(this.searchTerm.toLowerCase())
-    );
+    const searchTerm = this.searchTerm.toLowerCase();
+    return this.books.filter(book => {
+      const productIdStr = book.productId.toString();
+      const title = book.name.toLowerCase();
+      return productIdStr.includes(searchTerm) || title.includes(searchTerm);
+    });
   }
 
   onView(book: InventoryBook) {

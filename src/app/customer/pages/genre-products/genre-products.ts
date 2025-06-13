@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GenreService, Genre, ProductCard } from '../../services/genre.service';
 import { ProductCard as ProductCardComponent } from '../../components/product-card/product-card';
 import { SharedHeader } from '../../../shared/header/header';
@@ -23,7 +23,12 @@ export class GenreProducts implements OnInit {
   error = false;
   sortOption: string = 'price-asc';
 
-  constructor(private route: ActivatedRoute, private genreService: GenreService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private route: ActivatedRoute, 
+    private genreService: GenreService, 
+private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
@@ -47,7 +52,7 @@ export class GenreProducts implements OnInit {
     });
   }
 
-  fetchProducts(genreId: number) {
+fetchProducts(genreId: number) {
     this.genreService.getProductsForGenre(genreId).subscribe({
       next: (products: ProductCard[]) => {
         this.products = products;

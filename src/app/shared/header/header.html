@@ -13,9 +13,12 @@
         {{ userRole === 'admin' ? 'BookHub Admin' : 'BookHub' }}
       </span>
     </div>
-    <!-- Search Bar (only for customer) -->
-    <div class="flex-1 mx-8 max-w-xl" *ngIf="userRole !== 'admin'">
-      <input type="text" placeholder="Search For ISBN, Book Name..." class="w-full rounded-full px-4 py-2 border border-accent-light bg-accent-light text-accent-dark focus:outline-none focus:ring-2 focus:ring-secondary" />
+    <!-- Search Bar (visible for all users except admins) -->
+    <div class="flex-1 mx-4 md:mx-8 max-w-xl transition-all duration-200" *ngIf="userRole !== 'admin'">
+      <app-search-bar 
+        (searchFocus)="onSearchFocusChange($event)"
+        [class.search-focused]="isSearchFocused"
+      ></app-search-bar>
     </div>
     <!-- Icons/Profile -->
     <nav class="flex items-center gap-6">
@@ -39,14 +42,6 @@
           <button (click)="logout()" class="w-full text-left px-4 py-2 hover:bg-blue-50 text-slate-700">Logout</button>
         </div>
       </div>
-      <!-- Cart Icon (only for customer) -->
-      <button *ngIf="userRole !== 'admin'" class="ml-2 p-2 rounded-full hover:bg-secondary transition" aria-label="Cart">
-        <svg class="w-6 h-6 text-accent-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <circle cx="9" cy="21" r="1" />
-          <circle cx="20" cy="21" r="1" />
-          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-        </svg>
-      </button>
     </nav>
   </div>
 </header>

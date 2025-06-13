@@ -1,0 +1,72 @@
+<div class="relative flex items-center w-full">
+  <div class="relative w-full">
+    <input
+      #searchInput
+      type="text"
+      [(ngModel)]="searchQuery"
+      (ngModelChange)="onSearchChange($event)"
+      (focus)="onFocus()"
+      (blur)="onBlur()"
+      placeholder="Search for ISBN, Book Name..."
+      class="w-full rounded-full px-4 py-2 pr-10 border border-accent-light bg-accent-light text-accent-dark focus:outline-none focus:ring-2 focus:ring-secondary transition-all duration-200"
+      aria-label="Search books"
+      autocomplete="off"
+    >
+    <button
+      *ngIf="searchQuery"
+      (mousedown)="clearSearch()"
+      type="button"
+      class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+      aria-label="Clear search"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+    <div *ngIf="isSearching" class="absolute right-3 top-1/2 -translate-y-1/2">
+      <div class="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+    <button
+      *ngIf="!searchQuery && !isSearching"
+      type="button"
+      class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 focus:outline-none"
+      aria-label="Search"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+    </button>
+  </div>
+  
+  <!-- Search Results Dropdown -->
+  <div 
+    *ngIf="showResults && searchResults.length > 0"
+    class="absolute left-0 right-0 top-full mt-1 bg-white rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto"
+  >
+    <div *ngFor="let product of searchResults" 
+         (mousedown)="onResultClick(product, $event)"
+         class="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-0 flex items-center gap-3">
+      <div class="w-10 h-12 bg-gray-200 rounded flex-shrink-0 overflow-hidden">
+        <img *ngIf="product.image" [src]="product.image" [alt]="product.name" class="w-full h-full object-cover">
+      </div>
+      <div class="flex-1 min-w-0">
+        <h4 class="font-medium text-gray-900 truncate">{{ product.name || 'Untitled' }}</h4>
+        <p class="text-sm text-gray-500 truncate">
+          <span *ngIf="product.author">{{ product.author }}</span>
+          <span *ngIf="product.price"> • ${{ product.price }}</span>
+        </p>
+      </div>
+    </div>
+    <div *ngIf="searchResults.length >= 5" class="p-3 text-center text-sm text-gray-500 border-t border-gray-100">
+      Showing top 5 results. Try a more specific search for more accurate results.
+    </div>
+  </div>
+  
+  <!-- No Results -->
+  <div 
+    *ngIf="showResults && searchQuery && searchResults.length === 0 && !isSearching"
+    class="absolute left-0 right-0 top-full mt-1 bg-white rounded-lg shadow-lg z-50 p-4 text-center text-gray-500"
+  >
+    No results found for "{{ searchQuery }}"
+  </div>
+</div>

@@ -26,7 +26,10 @@
 <div *ngIf="error" class="text-center py-8 text-red-500">Failed to load products. Please try again later.</div>
 <div *ngIf="!loading && !error && products.length === 0" class="text-center py-8 text-slate-400">No data found.</div>
 <div *ngIf="!loading && !error && products.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-  <app-product-card *ngFor="let product of products" [product]="product"></app-product-card>
+  <app-product-card 
+    *ngFor="let product of products" 
+    [product]="product">
+  </app-product-card>
 </div>
 
 <app-shared-footer></app-shared-footer>

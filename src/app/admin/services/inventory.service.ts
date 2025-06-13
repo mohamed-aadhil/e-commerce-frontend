@@ -1,6 +1,16 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { catchError, Observable, of } from 'rxjs';
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
 
 export interface InventoryStats {
   totalBooks: number;
@@ -29,10 +39,36 @@ export class InventoryService {
     });
   }
 
-  getBooks(): Observable<InventoryBook[]> {
-    return this.http.get<InventoryBook[]>('/api/v1/inventory/books', {
+  getBooks(page: number = 1, limit: number = 10, search: string = ''): Observable<PaginatedResponse<InventoryBook>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString());
+    
+    if (search) {
+      // Check if search is a number (product ID) or string (title)
+      params = /^\d+$/.test(search) 
+        ? params.set('productId', search)
+        : params.set('title', search);
+    }
+  
+    return this.http.get<PaginatedResponse<InventoryBook>>('/api/v1/inventory/books', { 
+      params,
       headers: { 'Cache-Control': 'no-cache' }
-    });
+    }).pipe(
+      catchError(error => {
+        console.error('Error fetching books:', error);
+        // Return empty response on error
+        return of({
+          data: [],
+          pagination: {
+            total: 0,
+            page: 1,
+            limit: 10,
+            totalPages: 0
+          }
+        });
+      })
+    );
   }
 
   deleteBook(productId: string): Observable<any> {

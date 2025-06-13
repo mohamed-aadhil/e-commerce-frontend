@@ -122,6 +122,7 @@ export class AddBookComponent implements OnInit {
   fetchBook(id: string) {
     this.productService.getBookById(id).subscribe({
       next: (book: any) => {
+        console.log(book);
         this.prefillForm(book);
         this.originalData = {
           ...book,
@@ -130,6 +131,7 @@ export class AddBookComponent implements OnInit {
           images: (book.images || []).slice(),
           metadata: { ...(book.metadata || {}) }
         };
+        console.log(this.originalData);
         this.cdr.detectChanges();
       },
       error: () => {
@@ -211,8 +213,9 @@ export class AddBookComponent implements OnInit {
         this.newGenreName = '';
         this.addingGenre = false;
       },
-      error: () => {
-        this.snackBar.open('Failed to add genre.', 'Close', { duration: 2000 });
+      error: (err) => {
+        const errorMessage = err?.error?.error || 'Failed to add genre.';
+        this.snackBar.open(errorMessage, 'Close', { duration: 2000 });
         this.addingGenre = false;
       }
     });
@@ -239,8 +242,9 @@ export class AddBookComponent implements OnInit {
         this.newAudienceName = '';
         this.addingAudience = false;
       },
-      error: () => {
-        this.snackBar.open('Failed to add audience.', 'Close', { duration: 2000 });
+      error: (err) => {
+        const errorMessage = err?.error?.error || 'Failed to add audience.';
+        this.snackBar.open(errorMessage, 'Close', { duration: 2000 });
         this.addingAudience = false;
       }
     });

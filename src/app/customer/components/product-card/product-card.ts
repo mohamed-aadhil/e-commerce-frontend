@@ -13,14 +13,9 @@ import { ProductCard as ProductCardModel } from '../../services/genre.service';
 export class ProductCard {
   @Input() product!: ProductCardModel;
 
-  @Output() addToCart = new EventEmitter<ProductCardModel>();
   @Output() buyNow = new EventEmitter<ProductCardModel>();
 
   constructor(private router: Router) {}
-
-  onAddToCart() {
-    this.addToCart.emit(this.product);
-  }
 
   onBuyNow() {
     this.buyNow.emit(this.product);

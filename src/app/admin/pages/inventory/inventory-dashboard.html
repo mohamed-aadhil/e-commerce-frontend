@@ -38,7 +38,7 @@
     <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
       <h2 class="text-lg font-semibold">Book Inventory</h2>
       <div class="flex gap-2 items-center">
-        <input type="text" [(ngModel)]="searchTerm" placeholder="Search books..." class="border rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Search books by product ID or title..." class="border rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 w-64" />
         <!-- Genre filter dropdown can be added here later -->
       </div>
     </div>
@@ -106,6 +106,18 @@
         </tr>
       </tbody>
     </table>
+    <!-- Add this after your table -->
+    <div class="mt-4" *ngIf="length > pageSize">
+      <mat-paginator 
+        [length]="length"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        [pageIndex]="pageIndex"
+        (page)="onPageChange($event)"
+        aria-label="Select page"
+        class="mat-elevation-z2">
+      </mat-paginator>
+    </div>
     <div *ngIf="!loadingBooks && !errorBooks && filteredBooks.length === 0" class="text-center py-8 text-slate-400">No books found.</div>
   </div>
 </div> 

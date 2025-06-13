@@ -26,20 +26,42 @@
       <div class="text-lg text-primary mb-2" *ngIf="product.author">{{ product.author }}</div>
       <div class="text-2xl font-bold text-accent mb-2">₹ {{ product.price | number }}</div>
       <div class="text-xs text-slate-500 mb-4">(Inclusive of all taxes)</div>
+      
+      <!-- Quantity Selector -->
       <div class="flex items-center gap-2 mb-4">
         <label for="qty" class="font-medium">Qty</label>
-        <select id="qty" class="border rounded px-2 py-1 w-16">
-          <option *ngFor="let n of [].constructor(product.stock > 10 ? 10 : product.stock); let i = index" [value]="i+1">{{ i+1 }}</option>
+        <select 
+          id="qty" 
+          class="border rounded px-2 py-1 w-16"
+          [(ngModel)]="quantity"
+        >
+          <option *ngFor="let n of getAvailableQuantities()" [value]="n">{{ n }}</option>
         </select>
       </div>
+      
+      <!-- Action Buttons -->
       <div class="flex gap-4 mb-6">
-        <button class="bg-primary text-white px-6 py-2 rounded font-semibold hover:bg-primary-dark transition">ADD TO CART</button>
-        <button class="bg-green-600 text-white px-6 py-2 rounded font-semibold hover:bg-green-700 transition">BUY NOW</button>
+        <button 
+          class="w-full bg-green-600 text-white px-6 py-2 rounded font-semibold hover:bg-green-700 transition flex items-center justify-center"
+          (click)="onBuyNow()"
+          [disabled]="!product.stock"
+        >
+          BUY NOW
+        </button>
+      </div>
+      
+      <!-- Stock Status -->
+      <div class="text-sm mb-6" [ngClass]="{'text-green-600': product.stock > 0, 'text-red-600': product.stock <= 0}">
+        <span *ngIf="product.stock > 10">In Stock</span>
+        <span *ngIf="product.stock > 0 && product.stock <= 10">Only {{ product.stock }} left in stock!</span>
+        <span *ngIf="product.stock <= 0">Out of Stock</span>
       </div>
     </div>
+    
+    <!-- Product Description -->
     <div>
       <h2 class="text-xl font-bold mb-2">Description</h2>
-      <div class="text-slate-700">{{ product.description }}</div>
+      <div class="text-slate-700">{{ product.description || 'No description available.' }}</div>
     </div>
   </div>
 </div>

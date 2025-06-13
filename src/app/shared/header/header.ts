@@ -1,14 +1,20 @@
-import { Component, Input } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../auth/auth.service';
 import { Router } from '@angular/router';
 import { LoginComponent } from '../../auth/login/login.component';
 import { SignupComponent } from '../../auth/signup/signup.component';
+import { SearchBarComponent } from '../search-bar/search-bar.component';
 
 @Component({
   selector: 'app-shared-header',
   standalone: true,
-  imports: [CommonModule, LoginComponent, SignupComponent],
+  imports: [
+    CommonModule, 
+    LoginComponent, 
+    SignupComponent, 
+    SearchBarComponent
+  ],
   templateUrl: './header.html',
   styleUrl: './header.css'
 })
@@ -16,6 +22,7 @@ export class SharedHeader {
   showDropdown = false;
   userName = '';
   userRole: string | null = null;
+  isSearchFocused = false;
 
   showLoginModal = false;
   showSignupModal = false;
@@ -25,6 +32,10 @@ export class SharedHeader {
       this.userName = user?.name || '';
       this.userRole = user?.role || null;
     });
+  }
+
+  onSearchFocusChange(isFocused: boolean): void {
+    this.isSearchFocused = isFocused;
   }
 
   toggleDropdown() {
