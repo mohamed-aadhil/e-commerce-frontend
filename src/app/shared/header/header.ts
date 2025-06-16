@@ -1,19 +1,22 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
-import { Router } from '@angular/router';
 import { LoginComponent } from '../../auth/login/login.component';
 import { SignupComponent } from '../../auth/signup/signup.component';
 import { SearchBarComponent } from '../search-bar/search-bar.component';
+import { CartIconComponent } from '../../customer/components';
 
 @Component({
   selector: 'app-shared-header',
   standalone: true,
   imports: [
-    CommonModule, 
-    LoginComponent, 
-    SignupComponent, 
-    SearchBarComponent
+    CommonModule,
+    RouterLink,
+    LoginComponent,
+    SignupComponent,
+    SearchBarComponent,
+    CartIconComponent
   ],
   templateUrl: './header.html',
   styleUrl: './header.css'
@@ -23,14 +26,19 @@ export class SharedHeader {
   userName = '';
   userRole: string | null = null;
   isSearchFocused = false;
+  isCustomer = false;
 
   showLoginModal = false;
   showSignupModal = false;
+  
+  private router = inject(Router);
+  private authService = inject(AuthService);
 
-  constructor(private authService: AuthService, private router: Router) {
+  constructor() {
     this.authService.user$.subscribe(user => {
       this.userName = user?.name || '';
       this.userRole = user?.role || null;
+      this.isCustomer = this.userRole === 'customer';
     });
   }
 

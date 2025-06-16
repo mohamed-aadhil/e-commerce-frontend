@@ -7,6 +7,7 @@ export interface AuthResponse {
   accessToken: string;
   refreshToken?: string;
   user?: any;
+  cartMerged?: boolean;
 }
 
 export interface ApiError {
@@ -30,14 +31,37 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
+  /**
+   * Get the current session ID from the browser's cookies
+   */
+  private getSessionId(): string | null {
+    // The session cookie name might vary based on your backend configuration
+    // This is a common default for express-session
+    const match = document.cookie.match(/ecommerce\.sid=([^;]+)/);
+    return match ? match[1] : null;
+  }
+
   login(email: string, password: string): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>('/api/v1/auth/login', { email, password }).pipe(
+    const sessionId = this.getSessionId();
+    console.log('[AuthService] Login with session ID:', sessionId);
+    
+    return this.http.post<AuthResponse>('/api/v1/auth/login', { 
+      email, 
+      password, 
+      sessionId 
+    }, { withCredentials: true }).pipe(
       catchError(this.handleError)
     );
   }
 
   signup(data: any): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>('/api/v1/auth/register', data).pipe(
+    const sessionId = this.getSessionId();
+    console.log('[AuthService] Signup with session ID:', sessionId);
+    
+    return this.http.post<AuthResponse>('/api/v1/auth/register', {
+      ...data,
+      sessionId
+    }, { withCredentials: true }).pipe(
       catchError(this.handleError)
     );
   }
@@ -64,6 +88,16 @@ export class AuthService {
   clearAccessToken() {
     this.accessToken = null;
     this.userSubject.next(null);
+  }
+
+  /**
+   * Refresh the cart after login to ensure it's in sync with the server
+   * This triggers a cart refresh which will merge the guest cart with the user's cart
+   */
+  refreshCartAfterLogin() {
+    // The actual cart refresh is handled by the CartService's interceptor
+    // This method just triggers a dummy request to refresh the cart
+    return this.http.get('/api/v1/cart', { withCredentials: true });
   }
 
   private handleError(error: HttpErrorResponse) {

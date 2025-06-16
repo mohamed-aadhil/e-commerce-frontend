@@ -21,25 +21,35 @@
       ></app-search-bar>
     </div>
     <!-- Icons/Profile -->
-    <nav class="flex items-center gap-6">
+    <nav class="flex items-center gap-4">
+      <!-- Cart Icon - Show for all users -->
+      <div class="relative">
+        <app-cart-icon class="text-accent-dark hover:text-secondary transition-colors"></app-cart-icon>
+      </div>
+      
       <!-- If not logged in, show login button -->
-      <button *ngIf="!userRole" (click)="openLoginModal()" class="ml-2 p-2 rounded-full hover:bg-secondary transition" aria-label="Login">
+      <button *ngIf="!userRole" (click)="openLoginModal()" class="p-2 rounded-full hover:bg-secondary transition" aria-label="Login">
         <svg class="w-6 h-6 text-accent-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="12" cy="8" r="4" />
           <path d="M4 20c0-4 8-4 8-4s8 0 8 4" />
         </svg>
       </button>
+      
       <!-- If logged in, show profile and dropdown -->
       <div *ngIf="userRole" class="relative">
-        <button (click)="toggleDropdown()" class="ml-2 p-2 rounded-full hover:bg-secondary transition" aria-label="Profile">
+        <button (click)="toggleDropdown()" class="p-2 rounded-full hover:bg-secondary transition" aria-label="Profile">
           <svg class="w-6 h-6 text-accent-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <circle cx="12" cy="8" r="4" />
             <path d="M4 20c0-4 8-4 8-4s8 0 8 4" />
           </svg>
         </button>
-        <div *ngIf="showDropdown" class="absolute right-0 top-12 bg-white border rounded shadow-md w-40 z-50">
-          <div class="px-4 py-2 text-slate-700">{{ userName }}</div>
-          <button (click)="logout()" class="w-full text-left px-4 py-2 hover:bg-blue-50 text-slate-700">Logout</button>
+        <div *ngIf="showDropdown" class="absolute right-0 top-12 bg-white border rounded shadow-md w-48 z-50 overflow-hidden">
+          <div class="px-4 py-3 border-b bg-slate-50">
+            <p class="font-medium text-slate-800">{{ userName }}</p>
+            <p class="text-xs text-slate-500">{{ userRole | titlecase }}</p>
+          </div>
+          <a [routerLink]="['/profile']" class="block px-4 py-2 text-slate-700 hover:bg-blue-50">My Profile</a>
+          <button (click)="logout()" class="w-full text-left px-4 py-2 text-slate-700 hover:bg-blue-50">Sign Out</button>
         </div>
       </div>
     </nav>

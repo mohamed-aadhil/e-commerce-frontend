@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -12,6 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { NgZone } from '@angular/core';
 
 @Component({
   selector: 'admin-add-book',
@@ -32,7 +33,9 @@ export class AddBookComponent implements OnInit {
   // Form fields
   title = '';
   author = '';
-  price: number | null = null;
+  sellingPrice: number | null = null;
+  costPrice: number | null = null;
+  description = '';
   productType = 'New Book';
   images: string[] = [''];
   genreIds: number[] = [];
@@ -63,13 +66,15 @@ export class AddBookComponent implements OnInit {
   productId: string | null = null;
   originalData: any = null;
 
+  private ngZone = inject(NgZone);
+  private changeDetector = inject(ChangeDetectorRef);
+
   constructor(
     private genreService: AdminGenreService,
     private audienceService: AdminAudienceService,
     private http: HttpClient,
     private router: Router,
     private snackBar: MatSnackBar,
-    private cdr: ChangeDetectorRef,
     private route: ActivatedRoute,
     private productService: ProductService
   ) {}
@@ -120,76 +125,188 @@ export class AddBookComponent implements OnInit {
   }
 
   fetchBook(id: string) {
-    this.productService.getBookById(id).subscribe({
-      next: (book: any) => {
-        console.log(book);
-        this.prefillForm(book);
-        this.originalData = {
-          ...book,
-          genres: (book.genres || []).map((g: any) => ({ ...g, id: Number(g.id) })),
-          audiences: (book.audiences || []).map((a: any) => ({ ...a, id: Number(a.id) })),
-          images: (book.images || []).slice(),
-          metadata: { ...(book.metadata || {}) }
-        };
-        console.log(this.originalData);
-        this.cdr.detectChanges();
+    this.productService.getProduct(id).subscribe({
+      next: (book) => {
+        console.log('Fetched book data:', book); // Debug log
+        
+        // Reset arrays first to ensure clean state
+        this.images = [];
+        this.genreIds = [];
+        this.audienceIds = [];
+        this.metadata = [];
+
+        // Set basic fields
+        this.title = book.title || '';
+        this.author = book.author || '';
+        this.sellingPrice = book.selling_price || null;
+        this.costPrice = book.cost_price || null;
+        this.description = book.description || '';
+        this.productType = book.product_type || 'New Book';
+        
+        // Handle images
+        if (book.images && book.images.length > 0) {
+          this.images = [...book.images];
+        } else {
+          this.images = [''];
+        }
+        
+        // Handle genres
+        if (book.genres && book.genres.length > 0) {
+          this.genreIds = book.genres.map((g: any) => Number(g.id));
+        }
+        
+        // Handle audiences
+        if (book.audiences && book.audiences.length > 0) {
+          this.audienceIds = book.audiences.map((a: any) => Number(a.id));
+        }
+        
+        // Handle metadata
+        if (book.metadata && typeof book.metadata === 'object') {
+          this.metadata = Object.entries(book.metadata).map(([key, value]) => ({
+            key,
+            value: String(value)
+          }));
+        }
+        
+        // Handle inventory
+        this.initialStock = book.inventory?.quantity || null;
+        
+        // Save original data for change detection
+        this.originalData = { ...book };
+        
+        // Force change detection
+        this.changeDetector.detectChanges();
+        
+        console.log('Form data after processing:', {
+          title: this.title,
+          genreIds: this.genreIds,
+          audienceIds: this.audienceIds,
+          inventory: this.initialStock
+        });
       },
-      error: () => {
-        this.snackBar.open('Failed to load book data.', 'Close', { duration: 2000 });
-        this.router.navigate(['/admin']);
+      error: (error) => {
+        console.error('Error fetching book:', error);
+        this.snackBar.open('Failed to load book data', 'Close', { duration: 3000 });
+        this.router.navigate(['/admin/books']);
       }
     });
-  }
-
-  prefillForm(book: any) {
-    this.title = book.title;
-    this.author = book.author;
-    this.price = book.price;
-    this.productType = book.product_type;
-    this.images = book.images || [''];
-    this.genreIds = (book.genres || []).map((g: any) => Number(g.id));
-    this.audienceIds = (book.audiences || []).map((a: any) => Number(a.id));
-    this.metadata = Object.entries(book.metadata || {}).map(([key, value]) => ({ key, value: String(value) }));
-    // initialStock is not set in edit mode
   }
 
   resetForm() {
     this.title = '';
     this.author = '';
-    this.price = null;
+    this.sellingPrice = null;
+    this.costPrice = null;
+    this.description = '';
     this.productType = 'New Book';
     this.images = [''];
     this.genreIds = [];
     this.audienceIds = [];
     this.initialStock = null;
     this.metadata = [];
+    this.submitError = '';
+    this.submitSuccess = false;
   }
 
   isFormChanged(): boolean {
     if (!this.isEditMode || !this.originalData) return true;
-    const normalizeIds = (arr: any[]) => (arr || []).map(id => Number(id)).sort((a, b) => a - b);
 
-    const current = {
-      title: this.title,
-      author: this.author,
-      price: this.price,
-      product_type: this.productType,
-      images: this.images.filter(img => img.trim()),
-      genre_ids: normalizeIds(this.genreIds),
-      audience_ids: normalizeIds(this.audienceIds),
-      metadata: Object.fromEntries(this.metadata.filter(m => m.key && m.value).map(m => [m.key, m.value]))
+    // Helper function to compare values
+    const isEqual = (a: any, b: any): boolean => {
+      // Handle null/undefined cases
+      if (a === b) return true;
+      if (a == null || b == null) return false;
+      
+      // Handle arrays
+      if (Array.isArray(a) && Array.isArray(b)) {
+        if (a.length !== b.length) return false;
+        return a.every((val, i) => val === b[i]);
+      }
+      
+      // Handle numbers (convert to strings to avoid type coercion issues)
+      if (typeof a === 'number' || typeof b === 'number') {
+        return String(a) === String(b);
+      }
+      
+      // Handle objects
+      if (typeof a === 'object' && typeof b === 'object') {
+        const aKeys = Object.keys(a);
+        const bKeys = Object.keys(b);
+        
+        if (aKeys.length !== bKeys.length) return false;
+        return aKeys.every(key => isEqual(a[key], b[key]));
+      }
+      
+      return a === b;
     };
-    const original = {
-      title: this.originalData.title,
-      author: this.originalData.author,
-      price: this.originalData.price,
-      product_type: this.originalData.product_type,
-      images: this.originalData.images || [],
-      genre_ids: normalizeIds((this.originalData.genres || []).map((g: any) => g.id)),
-      audience_ids: normalizeIds((this.originalData.audiences || []).map((a: any) => a.id)),
-      metadata: this.originalData.metadata || {}
-    };
-    return JSON.stringify(current) !== JSON.stringify(original);
+
+    // Compare basic fields
+    const fieldsToCompare = [
+      'title', 'author', 'description', 'productType'
+    ] as const;
+
+    for (const field of fieldsToCompare) {
+      const currentValue = this[field];
+      const originalValue = this.originalData[field];
+      
+      if (!isEqual(currentValue, originalValue)) {
+        return true;
+      }
+    }
+
+    // Compare numeric fields with proper type handling
+    const numericFields = ['sellingPrice', 'costPrice', 'initialStock'] as const;
+    for (const field of numericFields) {
+      const currentValue = this[field];
+      const originalValue = this.originalData[field];
+      
+      // Convert both to numbers and compare
+      const currentNum = currentValue != null ? Number(currentValue) : null;
+      const originalNum = originalValue != null ? Number(originalValue) : null;
+      
+      if (currentNum !== originalNum) {
+        return true;
+      }
+    }
+
+    // Compare arrays
+    interface ArrayFieldConfig {
+      current: 'images' | 'genreIds' | 'audienceIds';
+      original: 'images' | 'genres' | 'audiences';
+      idOnly?: boolean;
+    }
+
+    const arrayFields: ArrayFieldConfig[] = [
+      { current: 'images', original: 'images' },
+      { current: 'genreIds', original: 'genres', idOnly: true },
+      { current: 'audienceIds', original: 'audiences', idOnly: true }
+    ];
+
+    for (const fieldConfig of arrayFields) {
+      const { current, original, idOnly } = fieldConfig;
+      const currentArray = [...(this[current] as any[]) || []];
+      let originalArray = [...(this.originalData[original] || [])];
+      
+      if (idOnly && originalArray.length > 0 && typeof originalArray[0] === 'object') {
+        originalArray = originalArray.map((item: any) => item.id);
+      }
+      
+      if (!isEqual(currentArray.sort(), originalArray.sort())) {
+        return true;
+      }
+    }
+
+    // Compare metadata
+    const currentMetadata = this.metadata
+      .filter((m: any) => m.key && m.value)
+      .reduce((acc: any, item: any) => ({
+        ...acc,
+        [item.key]: item.value
+      }), {});
+
+    const originalMetadata = this.originalData.metadata || {};
+    
+    return !isEqual(currentMetadata, originalMetadata);
   }
 
   addGenreInline() {
@@ -208,7 +325,7 @@ export class AddBookComponent implements OnInit {
             this.genreIds.push(genre.id);
           });
           this.snackBar.open('Genre added successfully!', 'Close', { duration: 2000 });
-          this.cdr.detectChanges();
+          this.changeDetector.detectChanges();
         }
         this.newGenreName = '';
         this.addingGenre = false;
@@ -237,7 +354,7 @@ export class AddBookComponent implements OnInit {
             this.audienceIds.push(audience.id);
           });
           this.snackBar.open('Audience added successfully!', 'Close', { duration: 2000 });
-          this.cdr.detectChanges();
+          this.changeDetector.detectChanges();
         }
         this.newAudienceName = '';
         this.addingAudience = false;
@@ -270,7 +387,9 @@ export class AddBookComponent implements OnInit {
     const payload: any = {};
     if (this.title !== this.originalData.title) payload.title = this.title;
     if (this.author !== this.originalData.author) payload.author = this.author;
-    if (this.price !== this.originalData.price) payload.price = this.price;
+    if (this.sellingPrice !== this.originalData.selling_price) payload.selling_price = this.sellingPrice;
+    if (this.costPrice !== this.originalData.cost_price) payload.cost_price = this.costPrice;
+    if (this.description !== this.originalData.description) payload.description = this.description;
     if (this.productType !== this.originalData.product_type) payload.product_type = this.productType;
 
     // Compare arrays by stringifying after normalizing and sorting
@@ -301,70 +420,95 @@ export class AddBookComponent implements OnInit {
     return payload;
   }
 
-  onSubmit(form: any) {
+  async onSubmit(form: any) {
     this.submitError = '';
     this.submitSuccess = false;
+    
     if (!form.valid) {
       this.submitError = 'Please fill all required fields.';
+      this.changeDetector.detectChanges();
       return;
     }
-    if (!this.genreIds.length || !this.audienceIds.length) {
+    
+    if (!this.genreIds?.length || !this.audienceIds?.length) {
       this.submitError = 'Please select at least one genre and one audience.';
+      this.changeDetector.detectChanges();
       return;
     }
-    if (this.isEditMode) {
-      if (!this.isFormChanged()) {
-        this.submitError = 'No changes made.';
-        return;
-      }
-      this.submitting = true;
-      const payload = this.buildUpdatePayload();
-      this.productService.updateBook(this.productId!, payload).subscribe({
-        next: () => {
-          this.snackBar.open('Book updated successfully!', 'Close', { duration: 2000 });
-          this.router.navigate(['/admin']);
-        },
-        error: (err) => {
-          this.submitting = false;
-          const msg = err?.error?.error || 'Failed to update book.';
-          this.snackBar.open(msg, 'Close', { duration: 3000 });
-        }
-      });
+
+    // Check if form has changes before submitting
+    if (this.isEditMode && !this.isFormChanged()) {
+      this.submitError = 'No changes detected. Please make changes before updating.';
+      this.changeDetector.detectChanges();
       return;
     }
+
     this.submitting = true;
-    // Prepare metadata object
-    const metadataObj: any = {};
-    for (const m of this.metadata) {
-      if (m.key && m.value) metadataObj[m.key] = m.value;
-    }
-    // Prepare payload
-    const payload = {
-      title: this.title,
-      author: this.author,
-      price: this.price,
-      product_type: this.productType,
-      images: this.images.filter(img => img.trim()),
-      genre_ids: this.genreIds,
-      audience_ids: this.audienceIds,
-      initial_stock: this.initialStock,
-      metadata: metadataObj
-    };
-    this.http.post('/api/v1/products', payload).subscribe({
-      next: () => {
-        this.submitSuccess = true;
-        this.onReset(form);
-        setTimeout(() => this.router.navigate(['/admin']), 1200);
-      },
-      error: (err) => {
-        this.submitting = false;
-        const msg = err?.error?.error || 'Failed to add book.';
-        this.snackBar.open(msg, 'Close', { duration: 3000 });
-      },
-      complete: () => {
-        this.submitting = false;
+    this.changeDetector.detectChanges();
+
+    try {
+      if (this.isEditMode) {
+        const payload = this.buildUpdatePayload();
+        
+        // Final check if payload has any changes (should be redundant but safe)
+        if (Object.keys(payload).length === 0) {
+          this.submitError = 'No changes to update.';
+          this.submitting = false;
+          this.changeDetector.detectChanges();
+          return;
+        }
+
+        await this.productService.updateBook(this.productId!, payload).toPromise();
+        this.snackBar.open('Book updated successfully!', 'Close', { 
+          duration: 2000,
+          panelClass: ['success-snackbar'] 
+        });
+      } else {
+        // Handle create new book
+        const metadataObj = this.metadata
+          .filter((m: any) => m.key && m.value)
+          .reduce((acc: any, item: any) => ({
+            ...acc,
+            [item.key]: item.value
+          }), {});
+
+        const newBook = {
+          title: this.title,
+          author: this.author,
+          selling_price: Number(this.sellingPrice),
+          cost_price: Number(this.costPrice),
+          description: this.description || '',
+          product_type: this.productType,
+          images: this.images.filter((img: string) => img.trim()),
+          genre_ids: this.genreIds,
+          audience_ids: this.audienceIds,
+          initial_stock: this.initialStock ? Number(this.initialStock) : 0,
+          metadata: metadataObj
+        };
+
+        await this.productService.createProduct(newBook).toPromise();
+        this.snackBar.open('Book created successfully!', 'Close', { 
+          duration: 2000,
+          panelClass: ['success-snackbar'] 
+        });
       }
-    });
+      
+      // Navigate back to the books list after a short delay
+      setTimeout(() => {
+        this.router.navigate(['/admin']);
+      }, 100);
+      
+    } catch (err: any) {
+      const msg = err?.error?.message || (this.isEditMode ? 'Failed to update book.' : 'Failed to create book.');
+      this.submitError = msg;
+      this.snackBar.open(msg, 'Close', { 
+        duration: 3000,
+        panelClass: ['error-snackbar']
+      });
+    } finally {
+      this.submitting = false;
+      this.changeDetector.detectChanges();
+    }
   }
 
   onCancel() {
@@ -374,7 +518,9 @@ export class AddBookComponent implements OnInit {
   onReset(form: any) {
     this.title = '';
     this.author = '';
-    this.price = null;
+    this.sellingPrice = null;
+    this.costPrice = null;
+    this.description = '';
     this.productType = 'New Book';
     this.images = [''];
     this.genreIds = [];
@@ -391,4 +537,12 @@ export class AddBookComponent implements OnInit {
       form.resetForm();
     }
   }
-} 
+
+  isSellingPriceLessThanCostPrice(): boolean {
+    if (this.sellingPrice === null || this.sellingPrice === undefined ||
+        this.costPrice === null || this.costPrice === undefined) {
+      return false;
+    }
+    return +this.sellingPrice < +this.costPrice;
+  }
+}

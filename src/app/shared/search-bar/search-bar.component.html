@@ -53,7 +53,7 @@
         <h4 class="font-medium text-gray-900 truncate">{{ product.name || 'Untitled' }}</h4>
         <p class="text-sm text-gray-500 truncate">
           <span *ngIf="product.author">{{ product.author }}</span>
-          <span *ngIf="product.price"> • ${{ product.price }}</span>
+          <span *ngIf="product.price"> • ₹{{ product.price }}</span>
         </p>
       </div>
     </div>

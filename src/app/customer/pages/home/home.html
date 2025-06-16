@@ -41,6 +41,18 @@
     <app-genre-card *ngFor="let genre of genres" [genre]="genre" (select)="onGenreSelect($event)"></app-genre-card>
   </div>
 </div>
+
+<!-- Shop by Audiences -->
+<div class="w-full max-w-5xl mx-auto mt-12">
+  <h2 class="text-2xl font-bold text-primary mb-6">Shop by Audiences</h2>
+  <div *ngIf="loadingAudiences" class="text-center py-8 text-slate-500">Loading audiences...</div>
+  <div *ngIf="audienceError" class="text-center py-8 text-red-500">Failed to load audiences. Please try again later.</div>
+  <div *ngIf="!loadingAudiences && !audienceError && audiences.length === 0" class="text-center py-8 text-slate-400">No audiences found.</div>
+  <div *ngIf="!loadingAudiences && !audienceError && audiences.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+    <app-audience-card *ngFor="let audience of audiences" [audience]="audience" (select)="onAudienceSelect($event)"></app-audience-card>
+  </div>
+</div>
+
 <app-shared-footer></app-shared-footer>
 
 

@@ -24,30 +24,26 @@
     <div>
       <h1 class="text-3xl font-bold mb-2">{{ product.name }}</h1>
       <div class="text-lg text-primary mb-2" *ngIf="product.author">{{ product.author }}</div>
-      <div class="text-2xl font-bold text-accent mb-2">₹ {{ product.price | number }}</div>
-      <div class="text-xs text-slate-500 mb-4">(Inclusive of all taxes)</div>
+      <div class="text-2xl font-bold text-accent mb-2">₹ {{ product.selling_price | number }}</div>
       
-      <!-- Quantity Selector -->
-      <div class="flex items-center gap-2 mb-4">
-        <label for="qty" class="font-medium">Qty</label>
-        <select 
-          id="qty" 
-          class="border rounded px-2 py-1 w-16"
-          [(ngModel)]="quantity"
-        >
-          <option *ngFor="let n of getAvailableQuantities()" [value]="n">{{ n }}</option>
-        </select>
-      </div>
-      
+
       <!-- Action Buttons -->
       <div class="flex gap-4 mb-6">
         <button 
-          class="w-full bg-green-600 text-white px-6 py-2 rounded font-semibold hover:bg-green-700 transition flex items-center justify-center"
+          class="w-1/2 bg-green-600 text-white px-4 py-2 rounded font-semibold hover:bg-green-700 transition flex items-center justify-center"
           (click)="onBuyNow()"
           [disabled]="!product.stock"
         >
           BUY NOW
         </button>
+        <div class="w-1/2">
+          <app-add-to-cart 
+            [productId]="product.id"
+            [maxQuantity]="product.stock"
+            [disabled]="!product.stock"
+            class="w-full"
+          ></app-add-to-cart>
+        </div>
       </div>
       
       <!-- Stock Status -->

@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
-import { Genre } from '../../services/genre.service';
+import { Genre } from '../../services/product.service';
 
 @Component({
   selector: 'app-genre-card',

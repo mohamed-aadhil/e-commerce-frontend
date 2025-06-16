@@ -24,7 +24,8 @@ export interface InventoryBook {
   name: string;
   author: string | null;
   genres: string[];
-  price: number;
+  cost_price: number;
+  selling_price: number;
   stock: number;
   status: string;
 }

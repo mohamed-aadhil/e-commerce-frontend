@@ -1,0 +1,38 @@
+<app-shared-header></app-shared-header>
+
+<nav class="text-sm text-slate-600 mb-4 flex items-center gap-2">
+  <a routerLink="/" class="hover:underline">Home</a>
+  <span class="mx-1">&gt;</span>
+  <ng-container *ngIf="audience; else unknownAudience">
+    <a [routerLink]="['/audience', audience.id, 'products']" class="hover:underline">{{ audience.name }}</a>
+  </ng-container>
+  <ng-template #unknownAudience>
+    <span *ngIf="!audience && !loading && !error">Unknown Audience</span>
+  </ng-template>
+</nav>
+
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+  <h1 class="text-2xl font-bold text-primary">
+    {{ audience ? audience.name + ' Books' : 'Loading...' }}
+  </h1>
+  <div class="flex items-center gap-2">
+    <label for="sort" class="text-sm text-slate-600">Sort by:</label>
+    <select id="sort" [(ngModel)]="sortOption" (change)="sortProducts()" class="border rounded px-2 py-1">
+      <option value="price-asc">Price: Low to High</option>
+      <option value="price-desc">Price: High to Low</option>
+    </select>
+  </div>
+</div>
+
+<div *ngIf="loading" class="text-center py-8 text-slate-500">Loading products...</div>
+<div *ngIf="error" class="text-center py-8 text-red-500">Failed to load products. Please try again later.</div>
+<div *ngIf="!loading && !error && products.length === 0" class="text-center py-8 text-slate-400">No products found for this audience.</div>
+
+<div *ngIf="!loading && !error && products.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+  <app-product-card 
+    *ngFor="let product of products" 
+    [product]="product">
+  </app-product-card>
+</div>
+
+<app-shared-footer></app-shared-footer>

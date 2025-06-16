@@ -102,13 +102,31 @@ export class LoginComponent {
     const user = this.authService.getUser();
     const returnUrl = this.router.routerState.snapshot.root.queryParams['returnUrl'];
     
-    if (returnUrl) {
-      this.router.navigateByUrl(returnUrl);
-    } else if (user?.role === 'admin') {
-      this.router.navigate(['/admin']);
-    } else {
-      this.close.emit();
-    }
+    // The cart merge happens automatically in the backend when the session is associated with the user
+    // We just need to ensure the cart is refreshed after login
+    this.authService.refreshCartAfterLogin().subscribe({
+      next: () => {
+        // Navigation after cart refresh
+        if (returnUrl) {
+          this.router.navigateByUrl(returnUrl);
+        } else if (user?.role === 'admin') {
+          this.router.navigate(['/admin']);
+        } else {
+          this.close.emit();
+        }
+      },
+      error: (error) => {
+        console.error('Error refreshing cart after login:', error);
+        // Continue with navigation even if cart refresh fails
+        if (returnUrl) {
+          this.router.navigateByUrl(returnUrl);
+        } else if (user?.role === 'admin') {
+          this.router.navigate(['/admin']);
+        } else {
+          this.close.emit();
+        }
+      }
+    });
   }
   
   private handleLoginError(error: any) {

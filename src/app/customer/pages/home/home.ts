@@ -1,7 +1,8 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { GenreService, Genre, ProductCard as ProductCardModel } from '../../services/genre.service';
+import { ProductService, Genre, ProductCard as ProductCardModel, Audience } from '../../services/product.service';
 import { GenreCard } from '../../components/genre-card/genre-card';
+import { AudienceCard } from '../../components/audience-card/audience-card';
 import { Router } from '@angular/router';
 import { SharedHeader } from '../../../shared/header/header';
 import { AuthService } from '../../../auth/auth.service';
@@ -9,7 +10,7 @@ import { SharedFooter } from '../../../shared/footer/footer';
 
 @Component({
   selector: 'app-home',
-  imports: [CommonModule, GenreCard, SharedHeader, SharedFooter],
+  imports: [CommonModule, GenreCard, AudienceCard, SharedHeader, SharedFooter],
   templateUrl: './home.html',
 })
 export class Home implements OnInit {
@@ -33,11 +34,19 @@ export class Home implements OnInit {
   loadingGenres = true;
   genreError = false;
   selectedGenre: Genre | null = null;
+  audiences: Audience[] = [];
+  loadingAudiences = true;
+  audienceError = false;
   products: ProductCardModel[] = [];
   loadingProducts = false;
   productError = false;
 
-  constructor(private genreService: GenreService, private router: Router, private cdr: ChangeDetectorRef, private authService: AuthService) {
+  constructor(
+    private productService: ProductService, 
+    private router: Router, 
+    private cdr: ChangeDetectorRef, 
+    private authService: AuthService
+  ) {
     this.authService.user$.subscribe((user: any) => {
       if (user?.role === 'admin') {
         this.router.navigate(['/admin']);
@@ -45,6 +54,7 @@ export class Home implements OnInit {
     });
     this.startAutoSlide();
     this.fetchGenres();
+    this.fetchAudiences();
   }
 
   ngOnInit() {
@@ -55,7 +65,7 @@ export class Home implements OnInit {
   fetchGenres() {
     this.loadingGenres = true;
     this.genreError = false;
-    this.genreService.getGenres().subscribe({
+    this.productService.getGenres().subscribe({
       next: (genres: Genre[]) => {
         console.log('Genres loaded:', genres);
         this.genres = genres;
@@ -70,6 +80,28 @@ export class Home implements OnInit {
     });
   }
 
+  fetchAudiences() {
+    this.loadingAudiences = true;
+    this.audienceError = false;
+    this.productService.getAudiences().subscribe({
+      next: (audiences: Audience[]) => {
+        console.log('Audiences loaded:', audiences);
+        this.audiences = audiences;
+        this.loadingAudiences = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.audienceError = true;
+        this.loadingAudiences = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  onAudienceSelect(audience: Audience) {
+    this.router.navigate(['/audience', audience.id, 'products']);
+  }
+
   onGenreSelect(genre: Genre) {
     this.router.navigate(['/genre', genre.id, 'products']);
   }
@@ -78,7 +110,7 @@ export class Home implements OnInit {
     this.loadingProducts = true;
     this.productError = false;
     this.products = [];
-    this.genreService.getProductsForGenre(genreId).subscribe({
+    this.productService.getProductsForGenre(genreId).subscribe({
       next: (products: ProductCardModel[]) => {
         this.products = products;
         this.loadingProducts = false;

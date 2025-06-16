@@ -3,12 +3,20 @@
     "target": "http://localhost:3000",
     "secure": false,
     "changeOrigin": true,
-    "logLevel": "debug"
+    "logLevel": "debug",
+    "withCredentials": true,
+    "cookieDomainRewrite": {
+      "*": "localhost"
+    }
   },
   "/api/v1": {
     "target": "http://localhost:3000",
     "secure": false,
     "changeOrigin": true,
-    "logLevel": "debug"
+    "logLevel": "debug",
+    "withCredentials": true,
+    "cookieDomainRewrite": {
+      "*": "localhost"
+    }
   }
-} 
+}

@@ -7,11 +7,13 @@ export const RefreshInterceptor: HttpInterceptorFn = (req: HttpRequest<any>, nex
   const authService = inject(AuthService);
   const token = authService.getAccessToken();
   console.log('RefreshInterceptor:', { url: req.url, token });
-  if (token) {
-    const cloned = req.clone({
-      setHeaders: { Authorization: `Bearer ${token}` }
-    });
-    return next(cloned);
-  }
-  return next(req);
-}; 
+  // Always include credentials with requests
+  const cloned = req.clone({
+    withCredentials: true,
+    setHeaders: token ? { 
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    } : {}
+  });
+  return next(cloned);
+};

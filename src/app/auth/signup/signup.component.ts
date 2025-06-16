@@ -107,44 +107,71 @@ export class SignupComponent {
     
     // Validate form
     if (!this.validateForm()) {
-      console.log('Form validation failed');
       return;
     }
     
     console.log('Submitting form...');
     
-    // Set loading state and clear previous errors
     this.loading = true;
     this.errors = {};
-    this.registrationSuccess = false;
-    
-    // Trigger change detection to show loading state
     this.cdr.detectChanges();
     
-    // Prepare signup data (remove confirmPassword)
+    // Remove confirmPassword before sending to the server
     const { confirmPassword, ...signupData } = this.form;
     
-    // Submit signup request
-    this.authService.signup(signupData).subscribe({
-      next: (res) => {
-        console.log('Signup response:', res);
+    // Get the current session ID for cart merging
+    const sessionId = this.getSessionId();
+    
+    this.authService.signup({ ...signupData, sessionId }).subscribe({
+      next: (response) => {
         this.loading = false;
+        this.registrationSuccess = true;
+        this.cdr.detectChanges();
         
-        if (res?.accessToken) {
-          this.handleSuccessfulSignup(res);
-        } else {
-          console.log('Error: Invalid response from server');
-          this.errors = { general: 'Invalid response from server' };
-          this.cdr.detectChanges();
+        // Automatically log in the user after successful registration
+        this.authService.setAccessToken(response.accessToken);
+        
+        // Handle cart merge status if needed
+        if (response.cartMerged) {
+          console.log('Cart was merged during registration');
         }
+        
+        // Redirect after a short delay to show success message
+        setTimeout(() => {
+          if (this.isModal) {
+            this.close.emit('close');
+          } else {
+            this.router.navigate(['/']);
+          }
+        }, 1500);
       },
       error: (error) => {
-        console.log('Error in subscription:', error);
-        this.handleSignupError(error);
+        this.loading = false;
+        console.error('Registration error:', error);
+        if (error?.error?.errors) {
+          this.errors = error.error.errors;
+        } else {
+          this.errors = { 
+            general: error.error?.message || 'An error occurred during registration. Please try again.' 
+          };
+        }
+        this.cdr.detectChanges();
       }
     });
   }
   
+  // Helper to get the current session ID from cookies
+  private getSessionId(): string | null {
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'connect.sid') {
+        return value;
+      }
+    }
+    return null;
+  }
+
   private handleSuccessfulSignup(response: any) {
     this.registrationSuccess = true;
     this.cdr.detectChanges();

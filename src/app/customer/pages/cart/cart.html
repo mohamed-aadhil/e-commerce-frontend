@@ -1,0 +1,120 @@
+<div class="cart-container">
+  <h1>Your Shopping Cart</h1>
+  
+  <div class="cart-layout">
+    <div class="cart-items">
+      <ng-container *ngIf="cart$ | async as cart; else loading">
+        <ng-container *ngIf="cart.items?.length; else emptyCart">
+          <mat-card *ngFor="let item of cart.items" class="cart-item">
+            <div class="item-details">
+              <img 
+                [src]="item.product.images?.[0] || 'assets/images/placeholder.jpg'" 
+                [alt]="item.product.title" 
+                class="item-image"
+                routerLink="/products/{{item.product.id}}"
+              >
+              <div class="item-info">
+                <h3 class="item-title" routerLink="/products/{{item.product.id}}">
+                  {{ item.product.title }}
+                </h3>
+                <p class="item-price">{{ item.price | currency:'INR' }}</p>
+                <p class="stock-status" [ngClass]="getStockStatus(item.product.inventory?.quantity).class">
+                  {{ getStockStatus(item.product.inventory?.quantity).text }}
+                </p>
+                <div class="item-actions">
+                  <button 
+                    mat-icon-button 
+                    (click)="updateQuantity(item.product.id, item.quantity - 1)"
+                    [disabled]="isUpdating"
+                  >
+                    <mat-icon>remove</mat-icon>
+                  </button>
+                  <span class="quantity">{{ item.quantity }}</span>
+                  <button 
+                    mat-icon-button 
+                    (click)="updateQuantity(item.product.id, item.quantity + 1)"
+                    [disabled]="isUpdating || item.quantity >= (item.product.inventory.quantity || 0)"
+                  >
+                    <mat-icon>add</mat-icon>
+                  </button>
+                  <button 
+                    mat-button 
+                    color="warn" 
+                    (click)="removeItem(item.product.id)"
+                    [disabled]="isUpdating"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="item-total">
+              {{ (item.price * item.quantity) | currency:'INR' }}
+            </div>
+          </mat-card>
+        </ng-container>
+      </ng-container>
+    </div>
+
+    <mat-card class="order-summary">
+      <h2>Order Summary</h2>
+      <mat-divider></mat-divider>
+      
+      <div class="summary-row">
+        <span>Subtotal</span>
+        <span>{{ getCartValue() | currency:'INR' }}</span>
+      </div>
+      <div class="summary-row">
+        <span>Shipping</span>
+        <span>Calculated at checkout</span>
+      </div>
+      
+      <mat-divider></mat-divider>
+      
+      <div class="summary-row total">
+        <span>Total</span>
+        <span>{{ getCartValue() | currency:'INR' }}</span>
+      </div>
+      
+      <button 
+        mat-flat-button 
+        color="primary" 
+        class="checkout-btn"
+        [disabled]="!(cart$ | async)?.items?.length"
+        routerLink="/checkout"
+      >
+        Proceed to Checkout
+      </button>
+      
+      <button 
+        mat-button 
+        color="primary" 
+        class="continue-shopping"
+        (click)="continueShopping()"
+      >
+        Continue Shopping
+      </button>
+    </mat-card>
+  </div>
+</div>
+
+<ng-template #loading>
+  <div class="loading">
+    <mat-spinner></mat-spinner>
+  </div>
+</ng-template>
+
+<ng-template #emptyCart>
+  <mat-card class="empty-cart">
+    <mat-icon>remove_shopping_cart</mat-icon>
+    <h2>Your cart is empty</h2>
+    <p>Looks like you haven't added anything to your cart yet</p>
+    <button 
+      mat-flat-button 
+      color="primary" 
+      (click)="continueShopping()"
+    >
+      Continue Shopping
+    </button>
+  </mat-card>
+</ng-template>
