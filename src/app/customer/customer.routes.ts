@@ -5,7 +5,6 @@ import { GenreProducts } from './pages/genre-products/genre-products';
 import { AudienceProducts } from './pages/audience-products/audience-products';
 import { ProductDetailsPage } from './pages/product-details/product-details';
 import { CartPageComponent } from './pages/cart/cart';
-
 export const customerRoutes: Routes = [
   { path: '', component: Home },
   { path: 'genre/:id/products', component: GenreProducts },

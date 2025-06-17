@@ -79,10 +79,17 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
       display: flex;
       align-items: center;
       border: 1px solid #e5e7eb;
-      border-radius: 6px;
+      border-radius: 8px;
       overflow: hidden;
       background-color: #f9fafb;
       height: 40px;
+      min-width: 100px;
+      transition: all 0.3s ease;
+    }
+    
+    .quantity-selector:hover {
+      border-color: #d1d5db;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .quantity-btn {
@@ -92,14 +99,24 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
       align-items: center;
       justify-content: center;
       color: #4b5563;
-      background-color: transparent;
+      background-color: #f3f4f6;
       border: none;
       cursor: pointer;
       transition: all 0.2s ease;
     }
-
+    
+    .quantity-btn:first-child {
+      border-top-left-radius: 8px;
+      border-bottom-left-radius: 8px;
+    }
+    
+    .quantity-btn:last-child {
+      border-top-right-radius: 8px;
+      border-bottom-right-radius: 8px;
+    }
+    
     .quantity-btn:hover:not(:disabled) {
-      background-color: #f3f4f6;
+      background-color: #e5e7eb;
       color: #1f2937;
     }
 
@@ -114,7 +131,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
       text-align: center;
       border: none;
       background: white;
-      font-size: 0.875rem;
+      font-size: 0.9375rem;
       font-weight: 500;
       color: #111827;
       -moz-appearance: textfield;
@@ -122,11 +139,12 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
       margin: 0;
       border-left: 1px solid #e5e7eb;
       border-right: 1px solid #e5e7eb;
+      transition: all 0.2s ease;
     }
-
+    
     .quantity-input:focus {
       outline: none;
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
     }
 
     .quantity-input::-webkit-outer-spin-button,
@@ -142,32 +160,67 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
       align-items: center;
       justify-content: center;
       gap: 8px;
-      border-radius: 6px;
+      border-radius: 8px;
       font-weight: 500;
       text-transform: none;
       letter-spacing: 0.025em;
-      transition: all 0.2s ease;
-      background-color: #3b82f6;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
       color: white;
       border: none;
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+      position: relative;
+      overflow: hidden;
+      min-width: 120px;
       padding: 0 16px;
+      white-space: nowrap;
       font-size: 0.875rem;
+      line-height: 1.25rem;
+      text-align: center;
+      text-decoration: none;
+      vertical-align: middle;
     }
 
-    .add-btn:not(:disabled):hover {
-      background-color: #2563eb;
+    .add-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
       transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+
+    .add-btn:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
     }
 
     .add-btn:disabled {
-      background-color: #93c5fd;
+      background: #e5e7eb;
+      color: #9ca3af;
       cursor: not-allowed;
-      transform: none;
+      box-shadow: none;
     }
 
     .add-btn .spinner {
       display: inline-block;
       margin-right: 6px;
+      --mdc-circular-progress-active-indicator-color: white;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 480px) {
+      .add-to-cart {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .quantity-selector {
+        width: 100%;
+        justify-content: space-between;
+      }
+      
+      .add-btn {
+        width: 100%;
+        height: 42px;
+      }
     }
     button[mat-icon-button] {
       width: 40px;

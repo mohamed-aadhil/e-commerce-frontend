@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -39,7 +39,8 @@ export class LoginComponent {
   constructor(
     private authService: AuthService, 
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) {}
 
   private validateForm(): boolean {
@@ -66,6 +67,7 @@ export class LoginComponent {
   }
 
   onSubmit() {
+    // Mark form as touched for validation
     this.emailTouched = true;
     this.passwordTouched = true;
     
@@ -73,58 +75,84 @@ export class LoginComponent {
       return;
     }
     
-    this.loading = true;
-    this.errors = {};
-    this.cdr.detectChanges(); // Trigger change detection
-    
-    this.authService.login(this.form.email, this.form.password).subscribe({
-      next: (res) => {
-        this.loading = false;
-        if (res?.accessToken) {
-          this.handleSuccessfulLogin(res);
-        } else {
-          this.errors = { general: 'Invalid response from server' };
-          this.cdr.detectChanges(); // Trigger change detection
+    // Set loading state in the next tick to avoid change detection issues
+    Promise.resolve().then(() => {
+      this.loading = true;
+      this.errors = {};
+      this.cdr.markForCheck();
+      
+      this.authService.login(this.form.email, this.form.password).subscribe({
+        next: (res) => {
+          // Handle successful login
+          if (res?.accessToken) {
+            this.handleSuccessfulLogin(res);
+          } else {
+            this.setErrorState('Invalid response from server');
+          }
+        },
+        error: (error) => {
+          this.handleLoginError(error);
         }
-      },
-      error: (error) => {
-        console.log('Login error received:', error);
-        this.loading = false;
-        this.errors = { general: 'Invalid email or password. Please try again.' };
-        console.log('Current errors after setting:', this.errors);
-        this.cdr.detectChanges(); // Trigger change detection
-      }
+      });
+    });
+  }
+  
+  private setErrorState(message: string): void {
+    // Use requestAnimationFrame to ensure we're outside Angular's change detection
+    requestAnimationFrame(() => {
+      this.loading = false;
+      this.errors = { general: message };
+      this.cdr.markForCheck();
     });
   }
   
   private handleSuccessfulLogin(response: any) {
+    // Update auth state
     this.authService.setAccessToken(response.accessToken);
     const user = this.authService.getUser();
-    const returnUrl = this.router.routerState.snapshot.root.queryParams['returnUrl'];
     
-    // The cart merge happens automatically in the backend when the session is associated with the user
-    // We just need to ensure the cart is refreshed after login
-    this.authService.refreshCartAfterLogin().subscribe({
-      next: () => {
-        // Navigation after cart refresh
-        if (returnUrl) {
-          this.router.navigateByUrl(returnUrl);
-        } else if (user?.role === 'admin') {
-          this.router.navigate(['/admin']);
-        } else {
-          this.close.emit();
+    // Get the return URL from the auth service (set during checkout) or from query params
+    const returnUrl = this.authService.redirectUrl || 
+                    this.router.routerState.snapshot.root.queryParams['returnUrl'];
+    
+    // Clear the redirect URL after using it
+    this.authService.redirectUrl = null;
+    
+    // Reset loading state in the next tick
+    requestAnimationFrame(() => {
+      this.loading = false;
+      this.cdr.markForCheck();
+      
+      // The cart merge happens automatically in the backend when the session is associated with the user
+      // We need to ensure the cart is refreshed after login
+      this.authService.refreshCartAfterLogin().subscribe({
+        next: () => this.navigateAfterLogin(returnUrl, user),
+        error: (error) => {
+          console.error('Error refreshing cart after login:', error);
+          // Continue with navigation even if cart refresh fails
+          this.navigateAfterLogin(returnUrl, user);
         }
-      },
-      error: (error) => {
-        console.error('Error refreshing cart after login:', error);
-        // Continue with navigation even if cart refresh fails
+      });
+    });
+  }
+  
+  private navigateAfterLogin(returnUrl: string | null, user: any) {
+    // Schedule navigation in the next tick to avoid change detection issues
+    Promise.resolve().then(() => {
+      if (this.isModal) {
+        // Close the modal first
+        this.close.emit();
+        
+        // If we have a return URL, navigate after a small delay to allow the modal to close
         if (returnUrl) {
-          this.router.navigateByUrl(returnUrl);
-        } else if (user?.role === 'admin') {
-          this.router.navigate(['/admin']);
-        } else {
-          this.close.emit();
+          setTimeout(() => this.router.navigateByUrl(returnUrl), 100);
         }
+      } else if (returnUrl) {
+        this.router.navigateByUrl(returnUrl);
+      } else if (user?.role === 'admin') {
+        this.router.navigate(['/admin']);
+      } else {
+        this.router.navigate(['/']);
       }
     });
   }

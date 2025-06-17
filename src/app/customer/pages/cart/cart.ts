@@ -1,14 +1,20 @@
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule, CurrencyPipe, Location } from '@angular/common';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule, Location } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { LoginComponent } from '../../../auth/login/login.component';
+import { SignupComponent } from '../../../auth/signup/signup.component';
 import { MatDividerModule } from '@angular/material/divider';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { CartService, Cart } from '../../services/cart.service';
-import { filter, map, take, Subscription } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
+import { CartService, Cart, CartItem } from '../../services/cart.service';
+
+import { AuthService } from '../../../auth/auth.service';
+import { Observable, Subscription, throwError } from 'rxjs';
+import { take, catchError, finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-cart',
@@ -19,29 +25,37 @@ import { filter, map, take, Subscription } from 'rxjs';
     MatButtonModule,
     MatIconModule,
     MatDividerModule,
-    RouterLink,
-    CurrencyPipe,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    LoginComponent,
+    SignupComponent,
+    RouterModule
   ],
   templateUrl: './cart.html',
-  styleUrls: ['./cart.css']
+  styleUrls: ['./cart.css'],
+  providers: [Location]
 })
 export class CartPageComponent implements OnInit, OnDestroy {
-  private cartService = inject(CartService);
-  private snackBar = inject(MatSnackBar);
-  
-  cart$ = this.cartService.cart$;
+  cart$: Observable<Cart | null>;
   isUpdating = false;
-  
-  // Add type for cart
+  isCheckingOut = false;
   cart: Cart | null = null;
+  showLoginModal = false;
+  showSignupModal = false;
   private cartSubscription: Subscription | null = null;
   private returnUrl: string | null = null;
-  
-  private location = inject(Location);
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
+
+  constructor(
+    private cartService: CartService,
+    private authService: AuthService,
+    private router: Router,
+    private route: ActivatedRoute,
+    private location: Location,
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog
+  ) {
+    this.cart$ = this.cartService.cart$;
+  }
 
   ngOnInit(): void {
     this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
@@ -71,8 +85,95 @@ export class CartPageComponent implements OnInit, OnDestroy {
   }
 
   getCartValue(): number {
-    if (!this.cart) return 0;
-    return this.cart.items.reduce((total: number, item: { price: number; quantity: number }) => total + (item.price * item.quantity), 0);
+    if (!this.cart?.items?.length) return 0;
+    return this.cart.items.reduce((total, item) => total + (item.price * item.quantity), 0);
+  }
+
+  /**
+   * Handle checkout process
+   * TODO: Implement checkout flow
+   */
+  async onCheckout(): Promise<void> {
+    // Check if user is authenticated
+    const isAuthenticated = await this.authService.isAuthenticated();
+    if (!isAuthenticated) {
+      this.openLoginDialog();
+      return;
+    }
+
+    const cart = await this.cart$.pipe(take(1)).toPromise();
+    if (!cart?.items?.length) {
+      this.snackBar.open('Your cart is empty', 'Close', { duration: 3000 });
+      return;
+    }
+
+    // Check product availability
+    const unavailableItems = cart.items.filter(
+      item => !item.product.inventory || item.quantity > item.product.inventory.quantity
+    );
+
+    if (unavailableItems.length > 0) {
+      const productNames = unavailableItems
+        .map(item => item.product.title)
+        .join(', ');
+      
+      this.snackBar.open(
+        `The following items are no longer available in the requested quantity: ${productNames}`,
+        'OK',
+        { duration: 5000, panelClass: ['error-snackbar'] }
+      );
+      return;
+    }
+
+    // TODO: Implement new checkout flow
+    this.snackBar.open('Checkout flow coming soon!', 'OK', { duration: 3000 });
+  }
+
+  // Placeholder for future order placement implementation
+  private async placeOrder(): Promise<void> {
+    // This method will be implemented in the new checkout flow
+    throw new Error('Order placement has been disabled for the new checkout flow');
+  }
+
+  private handleError(error: { message?: string }): void {
+    console.error('Cart error:', error);
+    this.snackBar.open(
+      error.message || 'An error occurred while loading your cart',
+      'Close',
+      { duration: 5000, panelClass: ['error-snackbar'] }
+    );
+  }
+
+  /**
+   * Open login dialog for unauthenticated users
+   */
+  // showLoginModal is already declared in the class properties
+
+  private openLoginDialog(): void {
+    // Set redirect URL for after login
+    this.authService.redirectUrl = '/cart';
+    this.showLoginModal = true;
+  }
+
+  onLoginModalClose(): void {
+    this.showLoginModal = false;
+  }
+
+  onSwitchToSignup(): void {
+    this.showLoginModal = false;
+    this.showSignupModal = true;
+  }
+
+  onSignupModalClose(reason?: 'close' | 'switch'): void {
+    this.showSignupModal = false;
+    if (reason === 'switch') {
+      this.showLoginModal = true;
+    }
+  }
+
+  onSwitchToLogin(): void {
+    this.showSignupModal = false;
+    this.showLoginModal = true;
   }
 
   getStockStatus(quantity: number | undefined): { text: string; class: string } {
@@ -85,85 +186,48 @@ export class CartPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  updateQuantity(productId: number, quantity: number): void {
-    if (this.isUpdating) {
-      console.log('CartPage: Update quantity already in progress');
-      return;
-    }
-    
-    console.log('CartPage: Updating quantity', { productId, quantity });
+  private updateCartItemQuantity(item: CartItem, quantity: number): void {
+    if (item.quantity === quantity) return;
+
     this.isUpdating = true;
-    
-    this.cartService.updateItem(productId, quantity).subscribe({
-      next: (cart) => {
-        console.log('CartPage: Update quantity success', { productId, quantity, cart });
-      },
-      error: (error) => {
-        console.error('CartPage: Error updating quantity:', {
-          error,
-          productId,
-          quantity,
-          status: error?.status,
-          statusText: error?.statusText,
-          errorDetails: error?.error
-        });
-        
-        this.snackBar.open(
-          error?.error?.message || 'Failed to update cart', 
-          'Dismiss', 
-          {
-            duration: 3000,
-            horizontalPosition: 'right',
-            verticalPosition: 'top',
-            panelClass: ['error-snackbar']
-          }
-        );
-      },
-      complete: () => {
-        console.log('CartPage: Update quantity completed');
-        this.isUpdating = false;
-      }
-    });
+    this.cartService
+      .updateItem(item.product.id, quantity)
+      .pipe(
+        catchError((error: { message?: string }) => {
+          this.handleError(error);
+          return throwError(() => error);
+        }),
+        finalize(() => (this.isUpdating = false))
+      )
+      .subscribe();
+  }
+
+  private removeCartItem(productId: number): void {
+    this.isUpdating = true;
+    this.cartService
+      .removeItem(productId)
+      .pipe(
+        catchError((error: { message?: string }) => {
+          this.handleError(error);
+          return throwError(() => error);
+        }),
+        finalize(() => (this.isUpdating = false))
+      )
+      .subscribe();
+  }
+
+  updateQuantity(productId: number, quantity: number): void {
+    const item = this.cart?.items.find(item => item.product.id === productId);
+    if (item) {
+      this.updateCartItemQuantity(item, quantity);
+    }
   }
 
   removeItem(productId: number): void {
-    if (this.isUpdating) {
-      console.log('CartPage: Remove item already in progress');
-      return;
+    const item = this.cart?.items.find(item => item.product.id === productId);
+    if (item) {
+      this.removeCartItem(item.product.id);
     }
-    
-    console.log('CartPage: Removing item', { productId });
-    this.isUpdating = true;
-    
-    this.cartService.removeItem(productId).subscribe({
-      next: (cart) => {
-        console.log('CartPage: Remove item success', { productId, cart });
-      },
-      error: (error) => {
-        console.error('CartPage: Error removing item:', {
-          error,
-          productId,
-          status: error?.status,
-          statusText: error?.statusText,
-          errorDetails: error?.error
-        });
-        
-        this.snackBar.open(
-          error?.error?.message || 'Failed to remove item', 
-          'Dismiss', 
-          {
-            duration: 3000,
-            horizontalPosition: 'right',
-            verticalPosition: 'top',
-            panelClass: ['error-snackbar']
-          }
-        );
-      },
-      complete: () => {
-        console.log('CartPage: Remove item completed');
-        this.isUpdating = false;
-      }
-    });
   }
 
 }

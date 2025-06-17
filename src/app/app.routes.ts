@@ -1,7 +1,4 @@
 import { Routes } from '@angular/router';
-import { Home } from './customer/pages/home/home';
-import { GenreProducts } from './customer/pages/genre-products/genre-products';
-import { ProductDetailsPage } from './customer/pages/product-details/product-details';
 import { TestComponent } from './test/test.component';
 
 export const routes: Routes = [
@@ -17,14 +14,6 @@ export const routes: Routes = [
     path: 'test-session',
     component: TestComponent,
   },
-  {
-    path: 'auth',
-    redirectTo: '/',
-    pathMatch: 'full',
-  },
-  {
-    path: 'auth/**',
-    redirectTo: '/',
-    pathMatch: 'full',
-  },
+  // Redirect any unmatched routes to home
+  { path: '**', redirectTo: '' }
 ];

@@ -1,26 +1,27 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ProductCard as ProductCardModel } from '../../services/product.service';
 import { AddToCartComponent } from '../add-to-cart/add-to-cart';
 
 @Component({
   selector: 'app-product-card',
   standalone: true,
-  imports: [CommonModule, AddToCartComponent],
+  imports: [
+    CommonModule, 
+    AddToCartComponent,
+    MatProgressSpinnerModule
+  ],
   templateUrl: './product-card.html',
   styleUrl: './product-card.css'
 })
 export class ProductCard {
   @Input() product!: ProductCardModel;
 
-  @Output() buyNow = new EventEmitter<ProductCardModel>();
-
-  constructor(private router: Router) {}
-
-  onBuyNow() {
-    this.buyNow.emit(this.product);
-  }
+  constructor(
+    private router: Router
+  ) {}
 
   get stockStatus() {
     return this.product.inventory?.quantity > 0 ? 'In Stock' : 'Out of Stock';

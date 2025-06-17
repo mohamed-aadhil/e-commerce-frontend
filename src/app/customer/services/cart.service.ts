@@ -90,6 +90,7 @@ export class CartService {
     });
   }
 
+
   getCart(): Observable<Cart> {
     console.log('CartService.getCart: Fetching cart from', this.apiUrl);
     

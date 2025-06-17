@@ -24,7 +24,7 @@
     <nav class="flex items-center gap-4">
       <!-- Cart Icon - Show for all users -->
       <div class="relative">
-        <app-cart-icon class="text-accent-dark hover:text-secondary transition-colors"></app-cart-icon>
+        <app-cart-icon *ngIf="userRole !== 'admin'" class="text-accent-dark hover:text-secondary transition-colors"></app-cart-icon>
       </div>
       
       <!-- If not logged in, show login button -->

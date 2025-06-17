@@ -38,7 +38,7 @@ export class SharedHeader {
     this.authService.user$.subscribe(user => {
       this.userName = user?.name || '';
       this.userRole = user?.role || null;
-      this.isCustomer = this.userRole === 'customer';
+            this.isCustomer = this.userRole !== 'admin';
     });
   }
 

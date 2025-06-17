@@ -3,17 +3,31 @@ import { CommonModule } from '@angular/common';
 import { ProductService, Genre, ProductCard as ProductCardModel, Audience } from '../../services/product.service';
 import { GenreCard } from '../../components/genre-card/genre-card';
 import { AudienceCard } from '../../components/audience-card/audience-card';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { SharedHeader } from '../../../shared/header/header';
 import { AuthService } from '../../../auth/auth.service';
 import { SharedFooter } from '../../../shared/footer/footer';
+import { LoginComponent } from '../../../auth/login/login.component';
+import { SignupComponent } from '../../../auth/signup/signup.component';
 
 @Component({
   selector: 'app-home',
-  imports: [CommonModule, GenreCard, AudienceCard, SharedHeader, SharedFooter],
+  imports: [
+    CommonModule, 
+    GenreCard, 
+    AudienceCard, 
+    SharedHeader, 
+    SharedFooter, 
+    RouterModule,
+    LoginComponent,
+    SignupComponent
+  ],
   templateUrl: './home.html',
 })
 export class Home implements OnInit {
+  // Modal states
+  showLoginModal = false;
+  showSignupModal = false;
   quotes = [
     {
       text: "A room without books is like a body without a soul.",
@@ -40,6 +54,28 @@ export class Home implements OnInit {
   products: ProductCardModel[] = [];
   loadingProducts = false;
   productError = false;
+
+  // Modal Handlers
+  onLoginModalClose(): void {
+    this.showLoginModal = false;
+  }
+
+  onSignupModalClose(reason?: 'close' | 'switch'): void {
+    this.showSignupModal = false;
+    if (reason === 'switch') {
+      this.showLoginModal = true;
+    }
+  }
+
+  onSwitchToSignup(): void {
+    this.showLoginModal = false;
+    this.showSignupModal = true;
+  }
+
+  onSwitchToLogin(): void {
+    this.showSignupModal = false;
+    this.showLoginModal = true;
+  }
 
   constructor(
     private productService: ProductService, 

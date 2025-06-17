@@ -32,9 +32,13 @@
         <button 
           class="w-1/2 bg-green-600 text-white px-4 py-2 rounded font-semibold hover:bg-green-700 transition flex items-center justify-center"
           (click)="onBuyNow()"
-          [disabled]="!product.stock"
+          [disabled]="!product.stock || isBuyingNow"
         >
-          BUY NOW
+          <span *ngIf="!isBuyingNow">BUY NOW</span>
+          <div *ngIf="isBuyingNow" class="button-loading">
+            <mat-spinner diameter="20" color="accent"></mat-spinner>
+            <span>Processing...</span>
+          </div>
         </button>
         <div class="w-1/2">
           <app-add-to-cart 
@@ -61,5 +65,22 @@
     </div>
   </div>
 </div>
+
+
+<!-- Login Modal -->
+<app-login
+  *ngIf="showLoginModal"
+  [isModal]="true"
+  (close)="onLoginModalClose()"
+  (switchToSignup)="onSwitchToSignup()">
+</app-login>
+
+<!-- Signup Modal -->
+<app-signup
+  *ngIf="showSignupModal"
+  [isModal]="true"
+  (close)="onSignupModalClose('close')"
+  (switchToLogin)="onSwitchToLogin()">
+</app-signup>
 
 <app-shared-footer></app-shared-footer>

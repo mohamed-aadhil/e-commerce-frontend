@@ -7,19 +7,22 @@
         <ng-container *ngIf="cart.items?.length; else emptyCart">
           <mat-card *ngFor="let item of cart.items" class="cart-item">
             <div class="item-details">
-              <img 
-                [src]="item.product.images?.[0] || 'assets/images/placeholder.jpg'" 
-                [alt]="item.product.title" 
-                class="item-image"
-                routerLink="/products/{{item.product.id}}"
-              >
+              <a [routerLink]="['/products', item.product.id]">
+                <img 
+                  [src]="item.product.images?.[0] || 'assets/images/placeholder.jpg'" 
+                  [alt]="item.product.title" 
+                  class="item-image"
+                >
+              </a>
               <div class="item-info">
-                <h3 class="item-title" routerLink="/products/{{item.product.id}}">
-                  {{ item.product.title }}
+                <h3 class="item-title">
+                  <a [routerLink]="['/products', item.product.id]" class="product-link">
+                    {{ item.product.title }}
+                  </a>
                 </h3>
                 <p class="item-price">{{ item.price | currency:'INR' }}</p>
-                <p class="stock-status" [ngClass]="getStockStatus(item.product.inventory?.quantity).class">
-                  {{ getStockStatus(item.product.inventory?.quantity).text }}
+                <p class="stock-status" [ngClass]="getStockStatus(item.product.inventory.quantity).class">
+                  {{ getStockStatus(item.product.inventory.quantity).text }}
                 </p>
                 <div class="item-actions">
                   <button 
@@ -80,10 +83,14 @@
         mat-flat-button 
         color="primary" 
         class="checkout-btn"
-        [disabled]="!(cart$ | async)?.items?.length"
-        routerLink="/checkout"
+        [disabled]="!(cart$ | async)?.items?.length || isCheckingOut"
+        (click)="onCheckout()"
       >
-        Proceed to Checkout
+        <span *ngIf="!isCheckingOut">Proceed to Checkout</span>
+        <div *ngIf="isCheckingOut" class="button-loading">
+          <mat-spinner diameter="20" color="accent"></mat-spinner>
+          <span>Processing...</span>
+        </div>
       </button>
       
       <button 
@@ -96,6 +103,22 @@
       </button>
     </mat-card>
   </div>
+  
+  <!-- Login Modal -->
+  <app-login
+    *ngIf="showLoginModal"
+    [isModal]="true"
+    (close)="onLoginModalClose()"
+    (switchToSignup)="onSwitchToSignup()">
+  </app-login>
+  
+  <!-- Signup Modal -->
+  <app-signup
+    *ngIf="showSignupModal"
+    [isModal]="true"
+    (close)="onSignupModalClose($event)"
+    (switchToLogin)="onSwitchToLogin()">
+  </app-signup>
 </div>
 
 <ng-template #loading>

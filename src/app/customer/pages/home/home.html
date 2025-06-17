@@ -53,6 +53,20 @@
   </div>
 </div>
 
+  <!-- Login Modal -->
+  <app-login
+    *ngIf="showLoginModal"
+    [isModal]="true"
+    (close)="onLoginModalClose()"
+    (switchToSignup)="onSwitchToSignup()">
+  </app-login>
+  
+  <!-- Signup Modal -->
+  <app-signup
+    *ngIf="showSignupModal"
+    [isModal]="true"
+    (close)="onSignupModalClose($event)"
+    (switchToLogin)="onSwitchToLogin()">
+  </app-signup>
+
 <app-shared-footer></app-shared-footer>
-
-

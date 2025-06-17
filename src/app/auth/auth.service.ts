@@ -28,8 +28,29 @@ export class AuthService {
   private userSubject = new BehaviorSubject<DecodedToken | null>(null);
   user$ = this.userSubject.asObservable();
   refreshInProgress: Promise<void> | null = null;
+  redirectUrl: string | null = null;
 
   constructor(private http: HttpClient) {}
+
+  /**
+   * Check if the user is currently authenticated
+   * @returns boolean indicating if the user is authenticated
+   */
+  isAuthenticated(): boolean {
+    // Check if we have a valid access token
+    if (this.accessToken) {
+      // Verify the token is not expired
+      try {
+        const decoded = jwtDecode<{ exp: number }>(this.accessToken);
+        const isExpired = decoded.exp < Date.now() / 1000;
+        return !isExpired;
+      } catch (error) {
+        console.error('Error decoding token:', error);
+        return false;
+      }
+    }
+    return false;
+  }
 
   /**
    * Get the current session ID from the browser's cookies
