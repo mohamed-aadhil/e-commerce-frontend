@@ -91,7 +91,6 @@ export class CartPageComponent implements OnInit, OnDestroy {
 
   /**
    * Handle checkout process
-   * TODO: Implement checkout flow
    */
   async onCheckout(): Promise<void> {
     // Check if user is authenticated
@@ -125,8 +124,8 @@ export class CartPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // TODO: Implement new checkout flow
-    this.snackBar.open('Checkout flow coming soon!', 'OK', { duration: 3000 });
+    // Navigate to checkout page
+    this.router.navigate(['/checkout']);
   }
 
   // Placeholder for future order placement implementation

@@ -1,0 +1,160 @@
+<h2 mat-dialog-title>{{ isEditMode ? 'Edit' : 'Add New' }} Address</h2>
+
+<mat-dialog-content class="dialog-content">
+  <form [formGroup]="addressForm" (ngSubmit)="onSubmit()" class="address-form">
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Full Name</mat-label>
+        <input 
+          matInput 
+          formControlName="recipientName"
+          placeholder="Enter recipient's full name"
+          [errorStateMatcher]="matcher"
+          autocomplete="name"
+        >
+        <mat-error *ngIf="isFieldInvalid('recipientName')">
+          {{ getErrorMessage('recipientName') }}
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Mobile Number</mat-label>
+        <input 
+          matInput 
+          formControlName="mobileNumber"
+          placeholder="Enter mobile number"
+          [errorStateMatcher]="matcher"
+          type="tel"
+          autocomplete="tel"
+        >
+        <mat-error *ngIf="isFieldInvalid('mobileNumber')">
+          {{ getErrorMessage('mobileNumber') }}
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Address Line 1</mat-label>
+        <input 
+          matInput 
+          formControlName="addressLine1"
+          placeholder="Street address, P.O. box, company name"
+          [errorStateMatcher]="matcher"
+          autocomplete="address-line1"
+        >
+        <mat-error *ngIf="isFieldInvalid('addressLine1')">
+          {{ getErrorMessage('addressLine1') }}
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Address Line 2 (Optional)</mat-label>
+        <input 
+          matInput 
+          formControlName="addressLine2"
+          placeholder="Apartment, suite, unit, building, floor, etc."
+          autocomplete="address-line2"
+        >
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>City</mat-label>
+        <input 
+          matInput 
+          formControlName="city"
+          placeholder="Enter your city"
+          [errorStateMatcher]="matcher"
+          autocomplete="address-level2"
+        >
+        <mat-error *ngIf="isFieldInvalid('city')">
+          {{ getErrorMessage('city') }}
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>State/Province/Region</mat-label>
+        <input 
+          matInput 
+          formControlName="state"
+          placeholder="Enter your state/province/region"
+          [errorStateMatcher]="matcher"
+          autocomplete="address-level1"
+        >
+        <mat-error *ngIf="isFieldInvalid('state')">
+          {{ getErrorMessage('state') }}
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Postal/ZIP Code</mat-label>
+        <input 
+          matInput 
+          formControlName="postalCode"
+          placeholder="Enter your postal/ZIP code"
+          [errorStateMatcher]="matcher"
+          autocomplete="postal-code"
+        >
+        <mat-error *ngIf="isFieldInvalid('postalCode')">
+          {{ getErrorMessage('postalCode') }}
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Country</mat-label>
+        <input 
+          matInput 
+          formControlName="country"
+          placeholder="Enter your country"
+          [errorStateMatcher]="matcher"
+        >
+        <mat-error *ngIf="isFieldInvalid('country')">
+          {{ getErrorMessage('country') }}
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <mat-checkbox formControlName="is_default">
+        Set as default shipping address
+      </mat-checkbox>
+    </div>
+
+    <div *ngIf="error" class="error-message">
+      <mat-icon color="warn">error_outline</mat-icon>
+      <span>{{ error }}</span>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button 
+    mat-button 
+    type="button" 
+    (click)="onCancel()"
+    [disabled]="loading"
+  >
+    Cancel
+  </button>
+  
+  <button 
+    mat-flat-button 
+    color="primary" 
+    type="button" 
+    (click)="onSubmit()"
+    [disabled]="addressForm.invalid || loading"
+  >
+    <span *ngIf="loading" class="button-loading">
+      <mat-spinner diameter="20"></mat-spinner>
+    </span>
+    <span *ngIf="!loading">
+      {{ isEditMode ? 'Update' : 'Save' }} Address
+    </span>
+  </button>
+</mat-dialog-actions>

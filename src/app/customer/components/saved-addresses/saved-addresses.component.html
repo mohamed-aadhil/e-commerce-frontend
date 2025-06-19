@@ -1,0 +1,81 @@
+<div class="saved-addresses">
+  <div class="header">
+    <h2>Saved Addresses</h2>
+    <button mat-flat-button color="primary" (click)="openAddAddressDialog()">
+      <mat-icon>add</mat-icon> Add New Address
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <mat-spinner diameter="32"></mat-spinner>
+    <span>Loading addresses...</span>
+  </div>
+
+  <div *ngIf="error" class="error">
+    <mat-icon color="warn">error_outline</mat-icon>
+    <span>{{ error }}</span>
+  </div>
+
+  <div *ngIf="!loading && !error" class="addresses-grid">
+    <div 
+      *ngFor="let address of addresses"
+      class="address-card"
+      [class.selected]="selectable && selectedAddress?.id === address.id"
+      (click)="onSelectAddress(address)"
+    >
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>
+            {{ address.recipientName }}
+            <span *ngIf="address.isDefault" class="default-badge">Default</span>
+          </mat-card-title>
+          <mat-card-subtitle>{{ address.mobileNumber }}</mat-card-subtitle>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <p>{{ address.addressLine1 }}</p>
+          <p *ngIf="address.addressLine2">{{ address.addressLine2 }}</p>
+          <p>{{ address.city }}, {{ address.state }} {{ address.postalCode }}</p>
+          <p>{{ address.country }}</p>
+        </mat-card-content>
+
+        <mat-card-actions align="end">
+          <button 
+            mat-icon-button 
+            color="primary" 
+            (click)="$event.stopPropagation(); openEditAddressDialog(address)"
+            title="Edit address"
+          >
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button 
+            mat-icon-button 
+            [color]="address.isDefault ? 'accent' : 'primary'"
+            [disabled]="address.isDefault || settingDefault"
+            (click)="onSetDefault(address, $event)"
+            title="Set as default address"
+          >
+            <mat-icon>{{ address.isDefault ? 'star' : 'star_border' }}</mat-icon>
+          </button>
+          <button 
+            mat-icon-button 
+            color="warn" 
+            (click)="$event.stopPropagation(); deleteAddress(address.id!)"
+            title="Delete address"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+          <!-- Removed duplicate 'Set as Default' button as we already have a star icon button for this purpose -->
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && !error && addresses.length === 0" class="no-addresses">
+    <mat-icon>location_off</mat-icon>
+    <p>No saved addresses found.</p>
+    <button mat-flat-button color="primary" (click)="openAddAddressDialog()">
+      Add Your First Address
+    </button>
+  </div>
+</div>

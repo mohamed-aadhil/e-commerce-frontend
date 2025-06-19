@@ -1,0 +1,198 @@
+<div class="order-confirmation-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-overlay">
+    <mat-spinner diameter="48"></mat-spinner>
+    <p>Loading your order details...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !isLoading" class="error-state">
+    <mat-icon class="error-icon">error_outline</mat-icon>
+    <h2>Unable to Load Order</h2>
+    <p>{{ error }}</p>
+    <button 
+      mat-flat-button 
+      color="primary" 
+      routerLink="/"
+      class="back-to-home-button"
+    >
+      Back to Home
+    </button>
+  </div>
+
+  <!-- Order Confirmation Content -->
+  <div *ngIf="order && !isLoading" class="confirmation-content">
+    <div class="confirmation-header">
+      <div class="confirmation-icon success">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <h1>Thank You for Your Order!</h1>
+      <p class="order-number">Order #{{ order.id }}</p>
+      <p class="confirmation-message">
+        We've received your order and are processing it. You'll receive a confirmation email shortly.
+      </p>
+    </div>
+
+    <div class="confirmation-details">
+      <div class="order-status-card">
+        <div class="status-item">
+          <div class="status-icon">
+            <mat-icon>receipt</mat-icon>
+          </div>
+          <div class="status-details">
+            <h3>Order Status</h3>
+            <p class="status-badge" [ngClass]="'status-' + order.status">
+              {{ getOrderStatusText(order.status) }}
+            </p>
+          </div>
+        </div>
+
+        <div class="status-item">
+          <div class="status-icon">
+            <mat-icon>payment</mat-icon>
+          </div>
+          <div class="status-details">
+            <h3>Payment Method</h3>
+            <div class="review-content" *ngIf="order?.payment">
+              <p>{{ getPaymentMethodName(order.payment.payment_method) }}</p>
+              <p>Payment Status: {{ getPaymentStatusText(order.payment.payment_status) }}</p>
+              <p *ngIf="order.payment.transaction_id">Transaction ID: {{ order.payment.transaction_id }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="status-item">
+          <div class="status-icon">
+            <mat-icon>local_shipping</mat-icon>
+          </div>
+          <div class="status-details">
+            <h3>Delivery</h3>
+            <p class="status-badge" [ngClass]="'status-' + order.shipping_status">
+              {{ getShippingStatusText(order.shipping_status) }}
+            </p>
+            <h3>Shipping Information</h3>
+            <div class="review-content" *ngIf="order?.shipping">
+              <p>{{ order.shipping.recipient_name || 'N/A' }}</p>
+              <p>{{ order.shipping.address_line1 || 'N/A' }}</p>
+              <p *ngIf="order.shipping.address_line2">{{ order.shipping.address_line2 }}</p>
+              <p>
+                {{ order.shipping.city || '' }}, 
+                {{ order.shipping.state || '' }} 
+                {{ order.shipping.postal_code || '' }}
+              </p>
+              <p>{{ order.shipping.country || 'N/A' }}</p>
+              <p *ngIf="order.shipping.phone">Phone: {{ order.shipping.phone }}</p>
+            </div>
+            <p class="estimated-delivery" *ngIf="order.status !== 'cancelled'">
+              Estimated delivery: {{ getEstimatedDeliveryDate() }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="order-summary-section">
+        <h2>Order Summary</h2>
+        <app-order-summary 
+          [orderData]="orderSummary"
+          [showTitle]="false"
+          [showItems]="true"
+          [showActions]="false"
+        ></app-order-summary>
+      </div>
+
+      <div class="customer-support">
+        <h3>Need Help?</h3>
+        <p>If you have any questions about your order, please contact our customer service team.</p>
+        <div class="support-options">
+          <button mat-stroked-button>
+            <mat-icon>email</mat-icon>
+            Email Support
+          </button>
+          <button mat-stroked-button>
+            <mat-icon>phone</mat-icon>
+            Call Us
+          </button>
+          <button mat-stroked-button>
+            <mat-icon>chat</mat-icon>
+            Live Chat
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="confirmation-actions">
+      <button 
+        mat-flat-button 
+        color="primary" 
+        class="continue-shopping-button"
+        (click)="onContinueShopping()"
+      >
+        Continue Shopping
+      </button>
+      
+      <div class="secondary-actions">
+        <button 
+          mat-stroked-button 
+          class="view-orders-button"
+          (click)="onViewOrderHistory()"
+        >
+          View Order History
+        </button>
+        <button 
+          mat-stroked-button 
+          class="track-order-button"
+          (click)="onTrackOrder()"
+          *ngIf="order.status !== 'cancelled'"
+        >
+          Track Order
+        </button>
+        <button 
+          mat-stroked-button 
+          class="print-receipt-button"
+          (click)="onPrintReceipt()"
+        >
+          Print Receipt
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Print Section (Hidden on screen, only shows when printing) -->
+  <div class="print-section" style="display: none;">
+    <div class="print-header">
+      <h1>Order Confirmation</h1>
+      <p>Order #{{ order?.id }}</p>
+      <p>Date: {{ order?.created_at | date:'medium' }}</p>
+    </div>
+    
+    <div class="print-order-summary">
+      <h2>Order Summary</h2>
+      <div class="print-order-items">
+        <div *ngFor="let item of order?.items" class="print-order-item">
+          <div class="item-name">{{ item.quantity }} × {{ item.product_name }}</div>
+          <div class="item-price">{{ item.price * item.quantity | currency }}</div>
+        </div>
+      </div>
+      
+      <div class="print-totals">
+        <div class="print-total-row">
+          <span>Subtotal:</span>
+          <span>{{ orderSummary.subtotal | currency }}</span>
+        </div>
+        <div class="print-total-row">
+          <span>Shipping:</span>
+          <span>{{ orderSummary.shipping | currency }}</span>
+        </div>
+        <div class="print-total-row total">
+          <span>Total:</span>
+          <span>{{ orderSummary.total | currency }}</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="print-thank-you">
+      <p>Thank you for shopping with us!</p>
+      <p>For any questions, please contact our customer service.</p>
+    </div>
+  </div>
+</div>

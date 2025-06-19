@@ -1,0 +1,93 @@
+<mat-card class="payment-method">
+  <mat-card-header *ngIf="showTitle">
+    <mat-card-title>Payment Method</mat-card-title>
+    <mat-card-subtitle>Select your preferred payment method</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()">
+      <div class="payment-options">
+        <mat-radio-group 
+          aria-label="Select a payment method" 
+          formControlName="paymentMethod"
+          (change)="onMethodSelect($event.value)"
+        >
+          <mat-card 
+            *ngFor="let method of paymentMethods" 
+            class="payment-option"
+            [class.selected]="paymentForm.get('paymentMethod')?.value === method.id"
+          >
+            <mat-radio-button [value]="method.id" class="payment-radio">
+              <div class="payment-option-content">
+                <mat-icon class="payment-icon">{{ method.icon }}</mat-icon>
+                <div class="payment-details">
+                  <div class="payment-name">{{ method.name }}</div>
+                  <div *ngIf="method.description" class="payment-description">
+                    {{ method.description }}
+                  </div>
+                </div>
+              </div>
+            </mat-radio-button>
+          </mat-card>
+        </mat-radio-group>
+
+        <div *ngIf="paymentForm.get('paymentMethod')?.invalid && paymentForm.get('paymentMethod')?.touched" 
+             class="error-message">
+          Please select a payment method
+        </div>
+      </div>
+
+      <div *ngIf="selectedMethodData?.id === 'credit_card' || selectedMethodData?.id === 'debit_card'" 
+           class="card-details">
+        <h3>Card Details</h3>
+        <div class="card-form">
+          <div class="form-group">
+            <label>Card Number</label>
+            <input type="text" placeholder="1234 5678 9012 3456" class="form-control" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Expiry Date</label>
+              <input type="text" placeholder="MM/YY" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label>CVV</label>
+              <input type="text" placeholder="123" class="form-control" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Name on Card</label>
+            <input type="text" placeholder="John Doe" class="form-control" />
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="selectedMethodData?.id === 'paypal'" class="paypal-info">
+        <p>You will be redirected to PayPal to complete your payment securely.</p>
+      </div>
+
+      <div *ngIf="selectedMethodData?.id === 'wallet'" class="wallet-info">
+        <p>Available balance: <strong>$0.00</strong></p>
+        <p>You'll use your wallet balance to pay for this order.</p>
+      </div>
+    </form>
+  </mat-card-content>
+
+  <mat-card-actions *ngIf="showActions" class="actions">
+    <button 
+      mat-flat-button 
+      color="primary" 
+      type="button" 
+      (click)="onSubmit()"
+      [disabled]="paymentForm.invalid || isLoading"
+      class="pay-now-button"
+    >
+      <span *ngIf="isLoading" class="button-loading">
+        <mat-spinner diameter="20"></mat-spinner>
+      </span>
+      <span *ngIf="!isLoading">
+        Pay Now {{ selectedMethodData ? 'with ' + selectedMethodData.name : '' }}
+      </span>
+    </button>
+  </mat-card-actions>
+</mat-card>

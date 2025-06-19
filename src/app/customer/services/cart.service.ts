@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, map, tap, catchError, throwError, pairwise, filter } from 'rxjs';
+import { BehaviorSubject, Observable, map, tap, catchError, throwError, pairwise, filter, of } from 'rxjs';
 import { AuthService } from '../../auth/auth.service';
+import { environment } from '../../../environments/environment';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -35,7 +36,7 @@ export interface Cart {
   providedIn: 'root'
 })
 export class CartService {
-  private apiUrl = '/api/v1/cart';
+  private apiUrl = `${environment.apiUrl}/api/v1/cart`;
   private cartSubject = new BehaviorSubject<Cart | null>(null);
   private http = inject(HttpClient);
 
@@ -83,7 +84,21 @@ export class CartService {
             },
             error: (err) => {
               console.error('Error creating new cart:', err);
+              // Even if we can't create a new cart, we should emit an empty cart
+              // to prevent the app from being stuck in a loading state
+              this.cartSubject.next({
+                id: 0,
+                is_guest: true,
+                items: []
+              });
             }
+          });
+        } else {
+          // For other errors, emit an empty cart to prevent the app from being stuck
+          this.cartSubject.next({
+            id: 0,
+            is_guest: true,
+            items: []
           });
         }
       }
@@ -97,6 +112,16 @@ export class CartService {
     // Log the current time to help with debugging
     const startTime = Date.now();
     console.log(`[${new Date().toISOString()}] Starting cart fetch...`);
+    
+    // Return an empty cart if the API URL is not set
+    if (!environment.apiUrl) {
+      console.error('API URL is not set in environment');
+      return of({
+        id: 0,
+        is_guest: true,
+        items: []
+      });
+    }
     
     return this.http.get<{ success: boolean; data: Cart }>(this.apiUrl).pipe(
       tap(response => {

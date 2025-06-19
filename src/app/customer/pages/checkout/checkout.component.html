@@ -1,0 +1,197 @@
+<div class="checkout-container">
+  <div class="checkout-header">
+    <h1>Checkout</h1>
+    <div class="checkout-steps">
+      <div class="step" [class.active]="currentStep === 0" [class.completed]="currentStep > 0">
+        <div class="step-number">1</div>
+        <div class="step-label">Shipping</div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step" [class.active]="currentStep === 1" [class.completed]="currentStep > 1">
+        <div class="step-number">2</div>
+        <div class="step-label">Payment</div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step" [class.active]="currentStep === 2" [class.completed]="currentStep > 2">
+        <div class="step-number">3</div>
+        <div class="step-label">Confirmation</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="checkout-content">
+    <div class="checkout-steps-content">
+      <!-- Step 1: Shipping Address -->
+      <div *ngIf="currentStep === 0" class="step-content">
+        <h2>Shipping Address</h2>
+        
+        <div class="shipping-method-selector" *ngIf="!isLoading">
+          <h3>Shipping Method</h3>
+          <mat-button-toggle-group 
+            [(ngModel)]="shippingMethod" 
+            (change)="onShippingMethodChange(shippingMethod)"
+            class="shipping-methods"
+          >
+            <mat-button-toggle 
+              *ngFor="let method of getShippingMethods()" 
+              [value]="method.id"
+              class="shipping-method"
+            >
+              <div class="shipping-method-content">
+                <div class="shipping-method-name">{{ method.name }}</div>
+                <div class="shipping-method-details">
+                  {{ method.estimatedDays }} • {{ method.price | currency }}
+                </div>
+              </div>
+            </mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+        
+        <div class="address-selection" *ngIf="!isLoading">
+          <div class="address-options">
+            <h3>Select a shipping address</h3>
+            <button 
+              mat-button 
+              color="primary" 
+              (click)="openAddAddressDialog()"
+              class="add-address-button"
+            >
+              <mat-icon>add</mat-icon> Add New Address
+            </button>
+          </div>
+          
+          <app-saved-addresses
+            [selectable]="true"
+            (addressSelected)="onAddressSelected($event)"
+          ></app-saved-addresses>
+        </div>
+        
+        <div class="loading-overlay" *ngIf="isLoading">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Loading your information...</p>
+        </div>
+      </div>
+
+      <!-- Step 2: Payment -->
+      <div *ngIf="currentStep === 1" class="step-content">
+        <h2>Payment Method</h2>
+        
+        <app-payment-method
+          [paymentMethods]="paymentMethods"
+          [selectedMethod]="selectedPaymentMethod"
+          [isLoading]="isLoading"
+          [showActions]="false"
+          (methodSelected)="onPaymentMethodSelected($event)"
+        ></app-payment-method>
+      </div>
+
+      <!-- Step 3: Review & Place Order -->
+      <div *ngIf="currentStep === 2" class="step-content">
+        <h2>Review Your Order</h2>
+        
+        <div class="review-section">
+          <div class="review-block">
+            <h3>Shipping Address</h3>
+            <div class="review-content" *ngIf="selectedAddress">
+              <p>{{ selectedAddress.recipientName }}</p>
+              <p>{{ selectedAddress.addressLine1 }}</p>
+              <p *ngIf="selectedAddress.addressLine2">{{ selectedAddress.addressLine2 }}</p>
+              <p>
+                {{ selectedAddress.city }}, {{ selectedAddress.state }} {{ selectedAddress.postalCode }}
+              </p>
+              <p>{{ selectedAddress.country }}</p>
+              <p>Phone: {{ selectedAddress.mobileNumber }}</p>
+            </div>
+            <button 
+              mat-button 
+              color="primary" 
+              (click)="currentStep = 0"
+              class="edit-button"
+            >
+              Edit
+            </button>
+          </div>
+          
+          <div class="review-block">
+            <h3>Shipping Method</h3>
+            <div class="review-content">
+              <p>{{ getShippingMethodName(shippingMethod) }}</p>
+              <p>Estimated delivery: {{ getEstimatedDelivery(shippingMethod) }}</p>
+            </div>
+            <button 
+              mat-button 
+              color="primary" 
+              (click)="currentStep = 0"
+              class="edit-button"
+            >
+              Edit
+            </button>
+          </div>
+          
+          <div class="review-block">
+            <h3>Payment Method</h3>
+            <div class="review-content" *ngIf="selectedPaymentMethod">
+              <p>{{ getPaymentMethodName(selectedPaymentMethod) }}</p>
+              <p>Payment will be processed securely</p>
+            </div>
+            <button 
+              mat-button 
+              color="primary" 
+              (click)="currentStep = 1"
+              class="edit-button"
+            >
+              Edit
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Order Summary -->
+    <div class="order-summary-container">
+      <app-order-summary 
+        [orderData]="orderSummary"
+        [showTitle]="true"
+        [showItems]="true"
+        [showActions]="false"
+      ></app-order-summary>
+      
+      <div class="checkout-actions">
+        <button 
+          mat-stroked-button 
+          color="primary" 
+          (click)="goBack()"
+          [disabled]="isProcessing"
+          class="back-button"
+        >
+          <mat-icon>arrow_back</mat-icon> {{ currentStep === 0 ? 'Back to Cart' : 'Back' }}
+        </button>
+        
+        <button 
+          *ngIf="currentStep < 2"
+          mat-flat-button 
+          color="primary" 
+          (click)="onAddressSubmit()"
+          [disabled]="!selectedAddress || isProcessing"
+          class="continue-button"
+        >
+          Continue to {{ currentStep === 0 ? 'Payment' : 'Review' }}
+          <mat-icon>arrow_forward</mat-icon>
+        </button>
+        
+        <button 
+          *ngIf="currentStep === 2"
+          mat-flat-button 
+          color="primary" 
+          (click)="placeOrder()"
+          [disabled]="!selectedPaymentMethod || isProcessing"
+          [class.spinner]="isProcessing"
+          class="place-order-button"
+        >
+          <span *ngIf="!isProcessing">Place Order</span>
+          <mat-spinner *ngIf="isProcessing" diameter="24"></mat-spinner>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

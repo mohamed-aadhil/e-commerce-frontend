@@ -1,0 +1,55 @@
+<mat-card class="order-summary">
+  <mat-card-header *ngIf="showTitle">
+    <mat-card-title>Order Summary</mat-card-title>
+    <mat-card-subtitle *ngIf="itemsCount > 0">{{ itemsCount }} {{ itemsCount === 1 ? 'item' : 'items' }}</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div class="order-items" *ngIf="showItems && orderData.items.length > 0">
+      <div class="order-item" *ngFor="let item of orderData.items">
+        <div class="item-image" *ngIf="item.image_url">
+          <img [src]="item.image_url" [alt]="item.name" />
+        </div>
+        <div class="item-details">
+          <div class="item-name">{{ item.name }}</div>
+          <div class="item-price">
+            {{ item.quantity }} × {{ item.price | currency }}
+          </div>
+        </div>
+        <div class="item-total">
+          {{ getItemTotal(item) | currency }}
+        </div>
+      </div>
+    </div>
+
+    <mat-divider class="divider"></mat-divider>
+
+    <div class="order-totals">
+      <div class="order-total-row">
+        <span>Subtotal</span>
+        <span>{{ orderData.subtotal | currency }}</span>
+      </div>
+      
+      <div class="order-total-row">
+        <span>Shipping</span>
+        <span>{{ orderData.shipping | currency }}</span>
+      </div>
+
+      <mat-divider class="divider"></mat-divider>
+
+      <div class="order-total-row total">
+        <span>Total</span>
+        <span>{{ orderData.total | currency }}</span>
+      </div>
+    </div>
+  </mat-card-content>
+
+  <mat-card-actions *ngIf="showActions" class="actions">
+    <button mat-flat-button color="primary" class="checkout-button">
+      Proceed to Checkout
+    </button>
+    <button mat-button routerLink="/cart" class="view-cart-button">
+      Back to Cart
+    </button>
+  </mat-card-actions>
+</mat-card>

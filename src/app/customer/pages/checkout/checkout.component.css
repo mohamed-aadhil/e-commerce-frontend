@@ -1,0 +1,82 @@
+/* Checkout Component Styles */
+.checkout-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.stepper-container {
+  margin-bottom: 2rem;
+}
+
+.step-content {
+  margin: 1.5rem 0;
+  min-height: 200px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2rem;
+  padding: 1rem 0;
+  border-top: 1px solid #e0e0e0;
+}
+
+.address-card {
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.address-card:hover {
+  background-color: #f5f5f5;
+}
+
+.address-card.selected {
+  border: 2px solid #3f51b5;
+  background-color: #f0f2ff;
+}
+
+.payment-method {
+  margin-bottom: 1rem;
+}
+
+.order-summary-container {
+  background-color: #f9f9f9;
+  padding: 1.5rem;
+  border-radius: 4px;
+  margin-top: 1rem;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.error-message {
+  color: #f44336;
+  margin: 1rem 0;
+}
+
+.success-message {
+  color: #4caf50;
+  margin: 1rem 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .checkout-container {
+    padding: 10px;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .form-actions button {
+    width: 100%;
+  }
+}
