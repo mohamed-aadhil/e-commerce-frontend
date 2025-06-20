@@ -3,9 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { AdminGenreService, Genre } from '../../services/genre.service';
-import { AdminAudienceService, Audience } from '../../services/audience.service';
-import { ProductService } from '../../services/product.service';
+import { AdminGenreService, Genre } from '../../../services/genre.service';
+import { AdminAudienceService, Audience } from '../../../services/audience.service';
+import { ProductService } from '../../../services/product.service';
 // Angular Material imports
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';

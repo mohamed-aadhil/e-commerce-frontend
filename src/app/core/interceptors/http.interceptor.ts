@@ -26,7 +26,7 @@ export class HttpInterceptor implements AngularHttpInterceptor {
     // Add a leading slash to the URL if it doesn't have one
     const url = request.url.startsWith('/') ? request.url : `/${request.url}`;
     
-    // Clone the request and add API URL and credentials
+    // Clone the request and add API URL
     const modifiedRequest = request.clone({
       url: `${environment.apiUrl}${url}`,
       withCredentials: environment.withCredentials

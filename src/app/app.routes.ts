@@ -4,7 +4,7 @@ import { TestComponent } from './test/test.component';
 export const routes: Routes = [
   {
     path: 'admin',
-    loadChildren: () => import('./admin/admin.routes').then(m => m.adminRoutes),
+    loadChildren: () => import('./admin/layout/admin.routes').then(m => m.adminRoutes),
   },
   {
     path: '',

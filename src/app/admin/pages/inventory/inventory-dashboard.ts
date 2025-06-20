@@ -137,7 +137,7 @@ export class InventoryDashboard implements OnInit, OnDestroy {
   }
 
   onEdit(book: InventoryBook) {
-    this.router.navigate(['/admin/books/edit', book.productId]);
+    this.router.navigate(['/admin/inventory/edit', book.productId]);
   }
 
   onRestock(book: InventoryBook) {
