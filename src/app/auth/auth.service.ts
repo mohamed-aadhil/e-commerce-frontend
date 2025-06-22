@@ -93,11 +93,30 @@ export class AuthService {
   }
 
   setAccessToken(token: string) {
+    console.log('[AuthService] Setting access token:', token ? `${token.substring(0, 20)}...` : 'null');
     this.accessToken = token;
+    
+    if (!token) {
+      console.log('[AuthService] No token provided, clearing user');
+      this.userSubject.next(null);
+      return;
+    }
+    
     try {
-      const decoded: DecodedToken = jwtDecode(token) as DecodedToken;
+      console.log('[AuthService] Decoding token...');
+      const decoded = jwtDecode<DecodedToken>(token);
+      console.log('[AuthService] Decoded token:', JSON.stringify(decoded, null, 2));
+      
+      if (!decoded) {
+        console.error('[AuthService] Failed to decode token');
+        this.userSubject.next(null);
+        return;
+      }
+      
+      console.log(`[AuthService] User authenticated: ${decoded.name}, Role: ${decoded.role}`);
       this.userSubject.next(decoded);
     } catch (e) {
+      console.error('[AuthService] Error decoding token:', e);
       this.userSubject.next(null);
     }
   }

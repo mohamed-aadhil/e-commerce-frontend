@@ -4,7 +4,15 @@ import { TestComponent } from './test/test.component';
 export const routes: Routes = [
   {
     path: 'admin',
-    loadChildren: () => import('./admin/layout/admin.routes').then(m => m.adminRoutes),
+    loadChildren: () => import('./admin/layout/admin.routes')
+      .then(m => {
+        console.log('[Router] Admin module loaded successfully');
+        return m.adminRoutes;
+      })
+      .catch(error => {
+        console.error('[Router] Error loading admin module:', error);
+        throw error;
+      }),
   },
   {
     path: '',

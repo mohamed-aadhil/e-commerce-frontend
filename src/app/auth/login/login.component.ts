@@ -107,54 +107,130 @@ export class LoginComponent {
   }
   
   private handleSuccessfulLogin(response: any) {
-    // Update auth state
-    this.authService.setAccessToken(response.accessToken);
-    const user = this.authService.getUser();
-    
-    // Get the return URL from the auth service (set during checkout) or from query params
-    const returnUrl = this.authService.redirectUrl || 
-                    this.router.routerState.snapshot.root.queryParams['returnUrl'];
-    
-    // Clear the redirect URL after using it
-    this.authService.redirectUrl = null;
-    
-    // Reset loading state in the next tick
-    requestAnimationFrame(() => {
+    try {
+      console.log('[Login] Handling successful login response');
+      
+      if (!response?.accessToken) {
+        throw new Error('No access token in login response');
+      }
+
+      console.log('[Login] Setting access token');
+      this.authService.setAccessToken(response.accessToken);
+      
+      // Get user from the token
+      const user = this.authService.getUser();
+      console.log('[Login] User from token:', user);
+      
+      if (!user) {
+        throw new Error('Failed to decode user information from token');
+      }
+
+      console.log('[Login] User logged in:', { 
+        name: user.name, 
+        role: user.role,
+        token: response.accessToken.substring(0, 20) + '...' 
+      });
+      
+      // Get the return URL from the auth service (set during checkout) or from query params
+      const returnUrl = this.authService.redirectUrl || 
+                      this.router.routerState.snapshot.root.queryParams['returnUrl'];
+      
+      console.log('[Login] Return URL:', returnUrl);
+      
+      // Clear the redirect URL after using it
+      this.authService.redirectUrl = null;
+      
+      // Reset loading state
       this.loading = false;
       this.cdr.markForCheck();
       
-      // The cart merge happens automatically in the backend when the session is associated with the user
-      // We need to ensure the cart is refreshed after login
-      this.authService.refreshCartAfterLogin().subscribe({
-        next: () => this.navigateAfterLogin(returnUrl, user),
-        error: (error) => {
-          console.error('Error refreshing cart after login:', error);
-          // Continue with navigation even if cart refresh fails
+      // Run navigation inside Angular's zone
+      this.ngZone.run(() => {
+        // For admin users, we don't need to wait for cart refresh
+        if (user.role === 'admin') {
+          console.log('[Login] Admin user detected, redirecting to admin dashboard');
           this.navigateAfterLogin(returnUrl, user);
+          return;
         }
+        
+        // For regular users, refresh the cart before navigation
+        console.log('[Login] Refreshing cart for regular user');
+        this.authService.refreshCartAfterLogin().subscribe({
+          next: () => {
+            console.log('[Login] Cart refresh complete, navigating to destination');
+            this.ngZone.run(() => this.navigateAfterLogin(returnUrl, user));
+          },
+          error: (error) => {
+            console.error('[Login] Error refreshing cart after login:', error);
+            // Continue with navigation even if cart refresh fails
+            this.ngZone.run(() => this.navigateAfterLogin(returnUrl, user));
+          }
+        });
       });
-    });
+    } catch (error) {
+      console.error('[Login] Error in handleSuccessfulLogin:', error);
+      this.setErrorState('An error occurred during login. Please try again.');
+    }
   }
   
   private navigateAfterLogin(returnUrl: string | null, user: any) {
-    // Schedule navigation in the next tick to avoid change detection issues
-    Promise.resolve().then(() => {
-      if (this.isModal) {
-        // Close the modal first
-        this.close.emit();
+    console.log('[Login] Starting navigation after login');
+    console.log('[Login] User role:', user?.role);
+    console.log('[Login] Return URL:', returnUrl);
+    
+    // Store navigation logic in a separate function
+    const performNavigation = () => {
+      try {
+        // Get the latest user data from auth service
+        const currentUser = this.authService.getUser();
+        const isAdmin = currentUser?.role === 'admin';
         
-        // If we have a return URL, navigate after a small delay to allow the modal to close
-        if (returnUrl) {
-          setTimeout(() => this.router.navigateByUrl(returnUrl), 100);
+        console.log('[Login] Current user from auth service:', currentUser);
+        console.log('[Login] Is admin:', isAdmin);
+        
+        // For admin users, always go to admin dashboard
+        if (isAdmin) {
+          console.log('[Login] Navigating to admin dashboard');
+          this.router.navigate(['/admin']).then(() => {
+            console.log('[Login] Navigation to admin dashboard complete');
+          }).catch(err => {
+            console.error('[Login] Error navigating to admin dashboard:', err);
+            this.router.navigate(['/']);
+          });
+          return;
         }
-      } else if (returnUrl) {
-        this.router.navigateByUrl(returnUrl);
-      } else if (user?.role === 'admin') {
-        this.router.navigate(['/admin']);
-      } else {
+        
+        // For non-admin users, respect the return URL if it exists
+        if (returnUrl) {
+          console.log(`[Login] Navigating to return URL: ${returnUrl}`);
+          this.router.navigateByUrl(returnUrl).catch(err => {
+            console.error('[Login] Error navigating to return URL:', err);
+            this.router.navigate(['/']);
+          });
+        } else {
+          // Default to home for non-admin users with no return URL
+          console.log('[Login] No return URL, navigating to home');
+          this.router.navigate(['/']);
+        }
+      } catch (error) {
+        console.error('[Login] Error during navigation after login:', error);
         this.router.navigate(['/']);
       }
-    });
+    };
+    
+    // Close modal if this is a modal login
+    if (this.isModal) {
+      console.log('[Login] Closing modal');
+      this.close.emit();
+      
+      // Use a small timeout to ensure the modal is closed before navigation
+      setTimeout(() => {
+        performNavigation();
+      }, 100);
+    } else {
+      // If not a modal, navigate immediately
+      performNavigation();
+    }
   }
   
   private handleLoginError(error: any) {

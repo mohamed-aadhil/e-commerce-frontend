@@ -10,6 +10,7 @@ import { routes } from './app.routes';
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { AuthService } from './auth/auth.service';
+import { AuthGuard } from './auth/auth.guard';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -17,6 +18,7 @@ export const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(),
     provideRouter(routes),
     AuthService,
+    AuthGuard,
     provideHttpClient(
       withInterceptors([RefreshInterceptor]),
       withInterceptorsFromDi()

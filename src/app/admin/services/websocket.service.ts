@@ -2,24 +2,7 @@ import { Injectable, OnDestroy } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
 import { BehaviorSubject, Observable } from 'rxjs';
-
-export interface GenreDataUpdate {
-  timestamp: string;
-  genreDistribution: Array<{
-    id: number;
-    name: string;
-    bookCount: number;
-  }>;
-  stats: {
-    totalBooks: number;
-    totalGenres: number;
-    mostPopularGenre: {
-      id: number;
-      name: string;
-      bookCount: number;
-    } | null;
-  };
-}
+import { GenreDataUpdate, PriceDataUpdate } from '../models/analytics.model';
 
 @Injectable({
   providedIn: 'root'
@@ -28,6 +11,7 @@ export class WebSocketService implements OnDestroy {
   private socket: Socket;
   private connected = new BehaviorSubject<boolean>(false);
   private genreUpdates = new BehaviorSubject<GenreDataUpdate | null>(null);
+  private priceUpdates = new BehaviorSubject<PriceDataUpdate | null>(null);
 
   constructor() {
     // Initialize socket connection
@@ -58,6 +42,12 @@ export class WebSocketService implements OnDestroy {
     this.socket.on('genre-data-updated', (data: GenreDataUpdate) => {
       console.log('Received genre data update:', data);
       this.genreUpdates.next(data);
+    });
+
+    // Handle price data updates
+    this.socket.on('price-data-updated', (data: PriceDataUpdate) => {
+      console.log('Received price data update for genre:', data.genreId);
+      this.priceUpdates.next(data);
     });
 
     // Error handling
@@ -119,8 +109,61 @@ export class WebSocketService implements OnDestroy {
   /**
    * Get observable for genre data updates
    */
-  get genreUpdates$(): Observable<GenreDataUpdate | null> {
+  getGenreUpdates(): Observable<GenreDataUpdate | null> {
     return this.genreUpdates.asObservable();
+  }
+
+  /**
+   * Get observable for price data updates
+   */
+  getPriceUpdates(): Observable<PriceDataUpdate | null> {
+    return this.priceUpdates.asObservable();
+  }
+
+  /**
+   * Connect to WebSocket server and return an observable of events
+   */
+  connect(): Observable<{ type: string; [key: string]: any }> {
+    return new Observable(subscriber => {
+      // Emit current connection status
+      subscriber.next({
+        type: this.connected.value ? 'connected' : 'disconnected'
+      });
+
+      // Subscribe to connection status changes
+      const connectionSub = this.connected.subscribe(isConnected => {
+        subscriber.next({
+          type: isConnected ? 'connected' : 'disconnected'
+        });
+      });
+
+      // Subscribe to genre updates
+      const genreSub = this.genreUpdates.subscribe(update => {
+        if (update) {
+          subscriber.next({
+            type: 'genre-data-updated',
+            ...update
+          });
+        }
+      });
+
+      // Subscribe to price updates
+      const priceSub = this.priceUpdates.subscribe(update => {
+        if (update) {
+          subscriber.next({
+            type: 'price-data-updated',
+            ...update
+          });
+        }
+      });
+
+      // Cleanup function
+      return () => {
+        connectionSub.unsubscribe();
+        genreSub.unsubscribe();
+        priceSub.unsubscribe();
+      };
+    });
   }
 
   /**

@@ -4,7 +4,13 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
-    "types": []
+    "types": ["node"],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "target": "es2022",
+    "useDefineForClassFields": false,
+    "module": "es2022"
   },
   "include": [
     "src/**/*.ts"

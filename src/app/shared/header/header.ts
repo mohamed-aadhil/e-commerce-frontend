@@ -24,10 +24,7 @@ import { CartIconComponent } from '../../customer/components';
 export class SharedHeader {
   showDropdown = false;
   userName = '';
-  userRole: string | null = null;
   isSearchFocused = false;
-  isCustomer = false;
-
   showLoginModal = false;
   showSignupModal = false;
   
@@ -37,8 +34,6 @@ export class SharedHeader {
   constructor() {
     this.authService.user$.subscribe(user => {
       this.userName = user?.name || '';
-      this.userRole = user?.role || null;
-            this.isCustomer = this.userRole !== 'admin';
     });
   }
 

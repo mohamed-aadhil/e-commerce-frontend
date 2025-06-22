@@ -1,24 +1,16 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
-export interface GenreDistribution {
-  id: number;
-  name: string;
-  bookCount: number;
-}
-
-export interface GenreStats {
-  totalBooks: number;
-  totalGenres: number;
-  mostPopularGenre: {
-    id: number;
-    name: string;
-    bookCount: number;
-  } | null;
-}
+// Import models
+import { 
+  Genre, 
+  GenreDistribution, 
+  PriceAnalysisData, 
+  PriceAnalysisProduct
+} from '../models/analytics.model';
 
 @Injectable({
   providedIn: 'root'
@@ -29,20 +21,34 @@ export class AnalyticsService {
   constructor(private http: HttpClient) {}
 
   /**
-   * Get the current genre distribution data
+   * Get all available genres
    */
-  getGenreDistribution(): Observable<GenreDistribution[]> {
-    return this.http.get<{ success: boolean; data: GenreDistribution[] }>(`${this.apiUrl}/genre-distribution`).pipe(
-      map(response => response.data)
+  getGenres(): Observable<Genre[]> {
+    return this.http.get<Genre[] | { success: boolean; data: Genre[] }>('/api/v1/genres').pipe(
+      map(response => {
+        // Handle both array response and success-wrapped response
+        return Array.isArray(response) ? response : (response?.data || []);
+      }),
+      catchError(error => {
+        console.error('Error fetching genres:', error);
+        return of([]);
+      })
     );
   }
 
   /**
-   * Get genre statistics
+   * Alias for getGenres() for backward compatibility
    */
-  getGenreStats(): Observable<GenreStats> {
-    return this.http.get<{ success: boolean; data: GenreStats }>(`${this.apiUrl}/genre-stats`).pipe(
-      map(response => response.data)
+  getAllGenres(): Observable<Genre[]> {
+    return this.getGenres();
+  }
+
+  /**
+   * Get the current genre distribution data
+   */
+  getGenreDistribution(): Observable<GenreDistribution[]> {
+    return this.http.get<{ success: boolean; data: GenreDistribution[] }>(`${this.apiUrl}/genre-distribution`).pipe(
+      map(response => response.data || [])
     );
   }
 
@@ -84,6 +90,105 @@ export class AnalyticsService {
     };
   }
   
+  /**
+   * Get price analysis data for a specific genre
+   * @param genreId The ID of the genre to analyze
+   */
+  getPriceAnalysis(genreId: number): Observable<{ success: boolean; data: PriceAnalysisData }> {
+    return this.http.get<{ success: boolean; data: PriceAnalysisData } | PriceAnalysisData>(
+      `${this.apiUrl}/price-analysis/${genreId}`
+    ).pipe(
+      map(response => {
+        // Handle both response formats: { success, data } or direct PriceAnalysisData
+        const isWrappedResponse = response && typeof response === 'object' && 'success' in response;
+        const responseData = isWrappedResponse ? (response as any).data : response as PriceAnalysisData;
+        
+        if (!responseData) {
+          console.error('No data in price analysis response');
+          return {
+            success: false,
+            data: {
+              products: [],
+              stats: {
+                avgCostPrice: 0,
+                avgSellingPrice: 0,
+                avgProfitMargin: 0,
+                totalProducts: 0
+              }
+            }
+          };
+        }
+
+        
+        // Ensure we have valid products array and stats
+        const products = Array.isArray((responseData as any).products) 
+          ? (responseData as any).products 
+          : [];
+          
+        const stats = (responseData as any).stats || {
+          avgCostPrice: 0,
+          avgSellingPrice: 0,
+          avgProfitMargin: 0,
+          totalProducts: 0
+        };
+
+        // Map the response data to match the PriceAnalysisData interface
+        const priceAnalysisData: PriceAnalysisData = {
+          products: products.map((product: any) => ({
+            id: product.id,
+            title: product.title || 'Untitled',
+            costPrice: Number(product.costPrice) || 0,
+            sellingPrice: Number(product.sellingPrice) || 0,
+            profitMargin: Number(product.profitMargin) || 0
+          })),
+          stats: {
+            avgCostPrice: Number(stats.avgCostPrice) || 0,
+            avgSellingPrice: Number(stats.avgSellingPrice) || 0,
+            avgProfitMargin: Number(stats.avgProfitMargin) || 0,
+            totalProducts: Number(stats.totalProducts) || 0
+          }
+        };
+
+        return {
+          success: true,
+          data: priceAnalysisData
+        };
+      }),
+      catchError(error => {
+        console.error('Error fetching price analysis:', error);
+        return of({
+          success: false,
+          data: {
+            products: [],
+            stats: {
+              avgCostPrice: 0,
+              avgSellingPrice: 0,
+              avgProfitMargin: 0,
+              totalProducts: 0
+            }
+          }
+        });
+      })
+    );
+  }
+
+  /**
+   * Prepare price analysis data for a bar chart
+   */
+  preparePriceChartData(products: PriceAnalysisProduct[]): {
+    labels: string[];
+    costPrices: number[];
+    sellingPrices: number[];
+  } {
+    // Ensure products is an array before mapping
+    const validProducts = Array.isArray(products) ? products : [];
+    const labels = validProducts.map(p => p.title || 'Untitled');
+    const costPrices = validProducts.map(p => p.costPrice || 0);
+    const sellingPrices = validProducts.map(p => p.sellingPrice || 0);
+    
+    return { labels, costPrices, sellingPrices };
+  }
+
   /**
    * Generate a set of visually distinct colors for the chart
    */

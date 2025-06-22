@@ -2,33 +2,37 @@
   <div class="max-w-7xl mx-auto flex items-center justify-between px-4 py-2">
     <!-- Logo and Branding -->
     <div class="flex items-center gap-2">
-      <span class="inline-block">
-        <svg class="w-10 h-10 text-secondary" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <rect x="2" y="4" width="20" height="16" rx="2" fill="#fff" stroke="currentColor" stroke-width="2"/>
-          <path d="M6 8h8M6 12h8M6 16h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
-        </svg>
-      </span>
-      <span class="text-2xl font-bold text-accent-dark tracking-tight">
-        {{ userRole === 'admin' ? 'BookHub Admin' : 'BookHub' }}
-      </span>
+      <a routerLink="/" class="flex items-center gap-2">
+        <span class="inline-block">
+          <svg class="w-10 h-10 text-secondary" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="4" width="20" height="16" rx="2" fill="#fff" stroke="currentColor" stroke-width="2"/>
+            <path d="M6 8h8M6 12h8M6 16h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </span>
+        <span class="text-2xl font-bold text-accent-dark tracking-tight">
+          BookHub
+        </span>
+      </a>
     </div>
-    <!-- Search Bar (visible for all users except admins) -->
-    <div class="flex-1 mx-4 md:mx-8 max-w-xl transition-all duration-200" *ngIf="userRole !== 'admin'">
+
+    <!-- Search Bar -->
+    <div class="flex-1 mx-4 md:mx-8 max-w-xl transition-all duration-200">
       <app-search-bar 
         (searchFocus)="onSearchFocusChange($event)"
-        [class.search-focused]="isSearchFocused"
-      ></app-search-bar>
+        [class.search-focused]="isSearchFocused">
+      </app-search-bar>
     </div>
+
     <!-- Icons/Profile -->
     <nav class="flex items-center gap-4">
-      <!-- Cart Icon - Show for all users -->
+      <!-- Cart Icon -->
       <div class="relative">
-        <app-cart-icon *ngIf="userRole !== 'admin'" class="text-accent-dark hover:text-secondary transition-colors"></app-cart-icon>
+        <app-cart-icon class="text-accent-dark hover:text-secondary transition-colors"></app-cart-icon>
       </div>
       
       <!-- If not logged in, show login button -->
-      <button *ngIf="!userRole" (click)="openLoginModal()" class="p-2 rounded-full hover:bg-secondary transition" aria-label="Login">
+      <button *ngIf="!userName" (click)="openLoginModal()" class="p-2 rounded-full hover:bg-secondary transition" aria-label="Login">
         <svg class="w-6 h-6 text-accent-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="12" cy="8" r="4" />
           <path d="M4 20c0-4 8-4 8-4s8 0 8 4" />
@@ -36,7 +40,7 @@
       </button>
       
       <!-- If logged in, show profile and dropdown -->
-      <div *ngIf="userRole" class="relative">
+      <div *ngIf="userName" class="relative">
         <button (click)="toggleDropdown()" class="p-2 rounded-full hover:bg-secondary transition" aria-label="Profile">
           <svg class="w-6 h-6 text-accent-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <circle cx="12" cy="8" r="4" />
@@ -46,7 +50,7 @@
         <div *ngIf="showDropdown" class="absolute right-0 top-12 bg-white border rounded shadow-md w-48 z-50 overflow-hidden">
           <div class="px-4 py-3 border-b bg-slate-50">
             <p class="font-medium text-slate-800">{{ userName }}</p>
-            <p class="text-xs text-slate-500">{{ userRole | titlecase }}</p>
+            <p class="text-xs text-slate-500">Customer</p>
           </div>
           <a [routerLink]="['/profile']" class="block px-4 py-2 text-slate-700 hover:bg-blue-50">My Profile</a>
           <button (click)="logout()" class="w-full text-left px-4 py-2 text-slate-700 hover:bg-blue-50">Sign Out</button>
@@ -56,5 +60,5 @@
   </div>
 </header>
 
-<app-login *ngIf="showLoginModal && !userRole" [isModal]="true" (close)="closeLoginModal()" (switchToSignup)="openSignupModal()"></app-login>
-<app-signup *ngIf="showSignupModal && !userRole" [isModal]="true" (close)="closeSignupModal()" (switchToLogin)="openLoginModal()"></app-signup> 
+<app-login *ngIf="showLoginModal && !userName" [isModal]="true" (close)="closeLoginModal()" (switchToSignup)="openSignupModal()"></app-login>
+<app-signup *ngIf="showSignupModal && !userName" [isModal]="true" (close)="closeSignupModal()" (switchToLogin)="openLoginModal()"></app-signup> 

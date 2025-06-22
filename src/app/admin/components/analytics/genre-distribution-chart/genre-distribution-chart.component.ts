@@ -1,22 +1,20 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { CommonModule, DecimalPipe } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSelectModule } from '@angular/material/select';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, TooltipItem, Plugin } from 'chart.js';
-import { MatCardModule } from '@angular/material/card';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-
-import { AnalyticsService, GenreDistribution } from '../../../services/analytics.service';
+import { AnalyticsService } from '../../../services/analytics.service';
 import { WebSocketService } from '../../../services/websocket.service';
-import { Subject, takeUntil } from 'rxjs';
+import { GenreDistribution, GenreDataUpdate } from '../../../models/analytics.model';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 
 @Component({
@@ -24,74 +22,125 @@ import ChartDataLabels from 'chartjs-plugin-datalabels';
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
-    BaseChartDirective,
-    MatCardModule,
-    MatProgressSpinnerModule,
+    DecimalPipe,
     MatButtonModule,
+    MatCardModule,
     MatIconModule,
-    MatButtonToggleModule,
-    MatFormFieldModule,
-    MatSelectModule,
+    MatMenuModule,
+    MatProgressSpinnerModule,
+    MatSnackBarModule,
     MatTooltipModule,
-    MatProgressBarModule
+    MatSelectModule,
+    BaseChartDirective
   ],
   providers: [
+    DecimalPipe,
     // Register the datalabels plugin
     { provide: 'chartPlugins', useValue: [ChartDataLabels] }
   ],
   template: `
-    <mat-card class="h-full flex flex-col">
-      <mat-card-header>
-        <mat-card-title>Genre Distribution</mat-card-title>
-        <mat-card-subtitle>Books by Genre</mat-card-subtitle>
-        <div class="flex-1"></div>
-        <div class="flex items-center">
-          <div class="flex items-center mr-3">
-            <span class="inline-block w-3 h-3 rounded-full mr-1" [ngClass]="isConnected ? 'bg-green-500' : 'bg-red-500'"></span>
-            <span class="text-sm">{{ isConnected ? 'Live' : 'Offline' }}</span>
+    <div class="flex flex-col h-full bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+      <!-- Header Section -->
+      <div class="px-6 pt-6 pb-2">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <div>
+            <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+              <mat-icon class="text-indigo-600">pie_chart</mat-icon>
+              Genre Distribution
+            </h2>
+            <p class="text-gray-600 mt-1">Books distribution across different genres</p>
           </div>
-          <button 
-            mat-icon-button 
-            [disabled]="isLoading"
-            (click)="loadData()"
-            matTooltip="Refresh data">
-            <mat-icon>refresh</mat-icon>
-          </button>
+          
+          <!-- Chart Type Selector -->
+          <div class="flex items-center gap-2 bg-gray-50 p-1 rounded-lg border border-gray-200">
+            <button 
+              *ngFor="let option of chartTypeOptions"
+              (click)="changeChartType(option.value)"
+              [class.bg-indigo-50]="selectedChartType === option.value"
+              [class.text-indigo-700]="selectedChartType === option.value"
+              [class.font-medium]="selectedChartType === option.value"
+              class="px-4 py-2 text-sm rounded-md text-gray-600 hover:bg-gray-100 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-100 flex items-center"
+            >
+              <mat-icon class="!w-5 !h-5 mr-1.5">{{ option.icon }}</mat-icon>
+              {{ option.label }}
+            </button>
+          </div>
         </div>
-      </mat-card-header>
+      </div>
 
-      <mat-card-content class="flex-1">
-        <div *ngIf="isLoading && !chartData" class="flex justify-center p-5">
-          <mat-spinner></mat-spinner>
-        </div>
-
-        <div *ngIf="errorMessage" class="p-3 bg-red-100 text-red-800 rounded">
-          {{ errorMessage }}
-        </div>
-
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-medium">Genre Distribution</h3>
-          <mat-form-field appearance="outline" class="w-40">
-            <mat-label>Chart Type</mat-label>
-            <mat-select [(ngModel)]="selectedChartType" (selectionChange)="onChartTypeChange()">
-              <mat-option *ngFor="let option of chartTypeOptions" [value]="option.value">
-                {{ option.label }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
+      <!-- Chart Content -->
+      <div class="flex-1 px-6 pb-6 flex flex-col">
+        <!-- Loading and Error States -->
+        <div *ngIf="isLoading && !chartData" class="flex-1 flex items-center justify-center">
+          <mat-spinner diameter="40"></mat-spinner>
         </div>
 
-        <div class="chart-container" [style.height]="chartHeight">
-          <canvas 
-            baseChart
-            [data]="chartData"
-            [options]="chartOptions"
-            [type]="chartType">
-          </canvas>
+        <div *ngIf="errorMessage" class="p-4 bg-red-50 text-red-700 text-sm rounded-lg border border-red-100 flex items-start">
+          <mat-icon class="text-red-500 mr-2 mt-0.5" style="font-size: 18px">error</mat-icon>
+          <div>{{ errorMessage }}</div>
         </div>
-      </mat-card-content>
-    </mat-card>
+
+        <!-- Chart Container -->
+        <div *ngIf="!isLoading && !errorMessage" class="flex-1 flex flex-col">
+          <div class="flex-1 min-h-[300px]">
+            <canvas baseChart
+              [data]="chartData"
+              [type]="selectedChartType"
+              [options]="chartOptions"
+              [plugins]="[]"
+              (chartHover)="onChartHover($event)">
+            </canvas>
+          </div>
+          
+          <!-- Stats Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <!-- Total Products Card -->
+            <div class="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium text-indigo-700 mb-1">Total Products</p>
+                  <p class="text-2xl font-bold text-indigo-900">{{ totalBooks | number }}</p>
+                </div>
+                <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+                  <mat-icon class="text-indigo-600">book</mat-icon>
+                </div>
+              </div>
+              <p class="text-xs text-indigo-600 mt-2">Across all genres</p>
+            </div>
+            
+            <!-- Total Genres Card -->
+            <div class="bg-purple-50 rounded-xl p-4 border border-purple-100">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium text-purple-700 mb-1">Total Genres</p>
+                  <p class="text-2xl font-bold text-purple-900">{{ totalGenres | number }}</p>
+                </div>
+                <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                  <mat-icon class="text-purple-600">category</mat-icon>
+                </div>
+              </div>
+              <p class="text-xs text-purple-600 mt-2">With available products</p>
+            </div>
+            
+            <!-- Most Popular Genre Card -->
+            <div class="bg-pink-50 rounded-xl p-4 border border-pink-100">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium text-pink-700 mb-1">Most Popular</p>
+                  <p class="text-lg font-bold text-pink-900 truncate" [matTooltip]="mostPopularGenre.name || 'N/A'">
+                    {{ mostPopularGenre.name || 'N/A' }}
+                  </p>
+                  <p class="text-sm text-pink-600">{{ mostPopularGenre.bookCount | number }} books</p>
+                </div>
+                <div class="w-10 h-10 rounded-lg bg-pink-100 flex items-center justify-center">
+                  <mat-icon class="text-pink-600">star</mat-icon>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   `,
   styles: [`
     .h-full {
@@ -169,6 +218,15 @@ import ChartDataLabels from 'chartjs-plugin-datalabels';
   `]
 })
 export class GenreDistributionChartComponent implements OnInit, OnDestroy {
+  // Stats calculated from genre distribution data
+  totalBooks = 0;
+  totalGenres = 0;
+  mostPopularGenre = {
+    id: 0,
+    name: '',
+    bookCount: 0
+  };
+
   chartData: ChartData = {
     labels: [],
     datasets: [{
@@ -178,15 +236,33 @@ export class GenreDistributionChartComponent implements OnInit, OnDestroy {
       borderWidth: 1
     }]
   };
-  chartType: ChartType = 'doughnut';
-  selectedChartType: ChartType = 'doughnut';
-  chartHeight = '400px';
-  
+
+  // Chart type options with icons
   chartTypeOptions = [
-    { label: 'Doughnut', value: 'doughnut' },
-    { label: 'Pie', value: 'pie' },
-    { label: 'Bar', value: 'bar' }
+    { label: 'Doughnut', value: 'doughnut' as ChartType, icon: 'donut_large' },
+    { label: 'Pie', value: 'pie' as ChartType, icon: 'pie_chart' }
   ];
+  
+  // Chart type properties
+  selectedChartType: ChartType = 'doughnut';
+  chartType: ChartType = 'doughnut';
+  chartHeight = '350px';
+
+  // Method to handle chart type change safely
+  changeChartType(type: ChartType): void {
+    if (this.selectedChartType !== type) {
+      this.selectedChartType = type;
+      this.chartType = type;
+      this.onChartTypeChange();
+    }
+  }
+
+  // Handle chart hover events
+  onChartHover(event: any): void {
+    // Handle hover events if needed
+    // This method is intentionally left empty as we don't need to do anything special on hover
+    // The event parameter is kept for future use if needed
+  }
 
   // Chart options with proper typing for datalabels and doughnut options
   chartOptions: ChartConfiguration['options'] & {
@@ -308,9 +384,19 @@ export class GenreDistributionChartComponent implements OnInit, OnDestroy {
 
   private prepareChartData(data: GenreDistribution[]): ChartData {
     if (!data || !Array.isArray(data) || data.length === 0) {
+      // Update stats with empty data
+      this.totalBooks = 0;
+      this.totalGenres = 0;
+      this.mostPopularGenre = {
+        id: 0,
+        name: '',
+        bookCount: 0
+      };
+      
       return {
         labels: ['No data available'],
         datasets: [{
+          label: 'Books',
           data: [1],
           backgroundColor: ['#e0e0e0'],
           borderColor: ['#bdbdbd'],
@@ -322,30 +408,49 @@ export class GenreDistributionChartComponent implements OnInit, OnDestroy {
     // Sort by book count in descending order
     const sortedData = [...data].sort((a, b) => b.bookCount - a.bookCount);
     
+    // Calculate stats
+    this.totalBooks = sortedData.reduce((sum, genre) => sum + genre.bookCount, 0);
+    this.totalGenres = sortedData.length;
+    this.mostPopularGenre = sortedData.length > 0 
+      ? { 
+          id: sortedData[0].id, 
+          name: sortedData[0].name, 
+          bookCount: sortedData[0].bookCount 
+        } 
+      : { id: 0, name: '', bookCount: 0 };
+    
     // Take top 10 genres and group the rest as 'Others'
     const topGenres = sortedData.slice(0, 9);
     const otherGenres = sortedData.slice(9);
     
-    const labels = [...topGenres.map(g => g.name)];
-    const values = [...topGenres.map(g => g.bookCount)];
+    // Calculate total books in 'Others' category
+    const otherBooksCount = otherGenres.reduce((sum, genre) => sum + genre.bookCount, 0);
     
+    // Prepare labels and data
+    const labels = [...topGenres.map(g => g.name)];
+    const bookCounts = [...topGenres.map(g => g.bookCount)];
+    
+    // Add 'Others' category if there are any
     if (otherGenres.length > 0) {
-      const otherCount = otherGenres.reduce((sum, genre) => sum + genre.bookCount, 0);
       labels.push('Others');
-      values.push(otherCount);
+      bookCounts.push(otherBooksCount);
     }
-
+    
     // Generate colors
     const backgroundColors = this.generateColors(labels.length);
+    const borderColors = backgroundColors.map(color => this.adjustColor(color, -20));
     
     return {
-      labels,
+      labels: labels,
       datasets: [{
-        data: values,
+        label: 'Number of Books',
+        data: bookCounts,
         backgroundColor: backgroundColors,
-        borderColor: backgroundColors.map(color => this.adjustColor(color, -20)),
+        borderColor: borderColors,
         borderWidth: 1,
-        hoverOffset: 10
+        barThickness: 'flex',
+        maxBarThickness: 40,
+        minBarLength: 2
       }]
     };
   }
@@ -356,6 +461,20 @@ export class GenreDistributionChartComponent implements OnInit, OnDestroy {
   
   private destroy$ = new Subject<void>();
 
+  // Helper method to get contrast color for text based on background
+  private getContrastColor(hexColor: string): string {
+    // Convert hex to RGB
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    
+    // Calculate luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Return black for light colors, white for dark colors
+    return luminance > 0.5 ? '#333' : '#fff';
+  }
+
   constructor(
     private analyticsService: AnalyticsService,
     private webSocketService: WebSocketService,
@@ -363,11 +482,29 @@ export class GenreDistributionChartComponent implements OnInit, OnDestroy {
   ) {
     // Initialize with empty data
     this.chartData = this.prepareChartData([]);
+    
+    // Set initial chart height
+    this.onChartTypeChange();
   }
 
   ngOnInit(): void {
     this.loadData();
     this.setupWebSocket();
+  }
+  
+  /**
+   * Public method to refresh the chart data
+   * @returns Promise that resolves when the chart data is refreshed
+   */
+  public async refresh(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        this.loadData();
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -388,6 +525,13 @@ export class GenreDistributionChartComponent implements OnInit, OnDestroy {
         console.error('Error loading genre distribution:', error);
         this.errorMessage = 'Failed to load genre distribution data. Please try again later.';
         this.isLoading = false;
+        this.totalBooks = 0;
+        this.totalGenres = 0;
+        this.mostPopularGenre = {
+          id: 0,
+          name: '',
+          bookCount: 0
+        };
         this.snackBar.open('Failed to load genre distribution data.', 'Dismiss', {
           duration: 5000,
           panelClass: ['error-snackbar']
@@ -397,12 +541,85 @@ export class GenreDistributionChartComponent implements OnInit, OnDestroy {
   }
 
   onChartTypeChange(): void {
+    // Update chart type
     this.chartType = this.selectedChartType;
-    // Adjust chart height based on type
-    if (this.chartType === 'bar') {
-      this.chartHeight = '500px';
-    } else {
-      this.chartHeight = '400px';
+    
+    // Common options for both doughnut and pie charts
+    this.chartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: this.selectedChartType === 'doughnut' ? '60%' : '0%',
+      elements: {
+        arc: {
+          borderWidth: 1,
+          borderRadius: 4
+        }
+      },
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            boxWidth: 12,
+            padding: 15,
+            font: {
+              size: 12
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: (context: any) => {
+              const label = context.label || '';
+              const value = context.raw as number;
+              const dataset = context.dataset.data as number[];
+              const total = dataset.reduce((a, b) => (a || 0) + (b || 0), 0);
+              const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+              return `${label}: ${value} (${percentage}%)`;
+            }
+          }
+        },
+        datalabels: {
+          display: (context: any) => {
+            const dataset = context.dataset;
+            const value = dataset.data[context.dataIndex];
+            const total = dataset.data.reduce((a: number, b: number) => a + b, 0);
+            const percentage = (value / total) * 100;
+            return percentage > 5; // Only show labels for slices > 5%
+          },
+          formatter: (value: number, context: any) => {
+            const dataset = context.chart.data.datasets[0].data as number[];
+            const total = dataset.reduce((a, b) => a + b, 0);
+            const percentage = Math.round((value / total) * 100);
+            return `${percentage}%`;
+          },
+          color: '#fff',
+          font: {
+            weight: 'bold',
+            size: 12
+          },
+          textAlign: 'center',
+          textStrokeColor: 'rgba(0, 0, 0, 0.5)',
+          textStrokeWidth: 1,
+          textShadowColor: 'rgba(0, 0, 0, 0.5)',
+          textShadowBlur: 3
+        }
+      },
+      // Hide scales for pie/doughnut charts
+      scales: {
+        x: { display: false },
+        y: { display: false }
+      },
+      animation: {
+        duration: 1000,
+        easing: 'easeInOutQuart'
+      }
+    };
+    
+    this.chartHeight = '350px';
+    
+    // Force chart update if data exists
+    if (this.chartData?.datasets?.length) {
+      this.chartData = { ...this.chartData };
     }
   }
 
@@ -420,13 +637,13 @@ export class GenreDistributionChartComponent implements OnInit, OnDestroy {
       });
 
     // Listen for data updates
-    this.webSocketService.genreUpdates$
+    this.webSocketService.getGenreUpdates()
       .pipe(takeUntil(this.destroy$))
-      .subscribe((update: any) => {
+      .subscribe((update: GenreDataUpdate | null) => {
         if (update?.genreDistribution) {
           this.chartData = this.prepareChartData(update.genreDistribution);
           this.snackBar.open('Genre distribution updated', 'Dismiss', {
-            duration: 3000,
+            duration: 2000,
             panelClass: ['success-snackbar']
           });
         }

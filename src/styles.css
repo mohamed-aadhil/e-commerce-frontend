@@ -31,4 +31,15 @@
 .material-icons.md-36 { font-size: 36px; }
 .material-icons.md-48 { font-size: 48px; }
 
+/* Snackbar Styles */
+.success-snackbar {
+  background-color: #4caf50 !important;
+  color: white !important;
+}
+
+.error-snackbar {
+  background-color: #f44336 !important;
+  color: white !important;
+}
+
 /* Add any additional global styles below */
