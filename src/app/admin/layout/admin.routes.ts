@@ -4,6 +4,8 @@ import { AuthGuard } from '../../auth/auth.guard';
 import { AddBookComponent } from '../pages/inventory/add-book/add-book.component';
 import { AdminLayoutComponent } from './layout.component';
 import { ProductAnalyticsComponent } from '../pages/analytics/product-analytics.component';
+import { InventoryAnalyticsComponent } from '../pages/analytics/inventory-analytics.component';
+import { AnalyticsComponent } from '../pages/analytics/analytics.component';
 
 export const adminRoutes: Routes = [
   {
@@ -12,7 +14,17 @@ export const adminRoutes: Routes = [
     canActivate: [AuthGuard],
     data: { role: 'admin' },
     children: [
-      { path: '', redirectTo: 'inventory', pathMatch: 'full' },
+      { path: '', redirectTo: 'analytics', pathMatch: 'full' },
+      {
+        path: 'analytics',
+        component: AnalyticsComponent,
+        children: [
+          { path: '', redirectTo: 'products', pathMatch: 'full' },
+          { path: 'products', component: ProductAnalyticsComponent },
+          { path: 'inventory', component: InventoryAnalyticsComponent },
+          // Add more analytics tabs here as needed
+        ]
+      },
       {
         path: 'inventory',
         children: [
@@ -21,14 +33,7 @@ export const adminRoutes: Routes = [
           { path: 'edit/:id', component: AddBookComponent }
         ]
       },
-      {
-        path: 'analytics',
-        children: [
-          { path: '', redirectTo: 'products', pathMatch: 'full' },
-          { path: 'products', component: ProductAnalyticsComponent }
-        ]
-      },
-      { path: '**', redirectTo: 'inventory' }
+      { path: '**', redirectTo: 'analytics' }
     ]
   }
 ];

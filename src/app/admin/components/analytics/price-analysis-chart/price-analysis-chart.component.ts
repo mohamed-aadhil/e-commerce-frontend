@@ -1,7 +1,24 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, Output, EventEmitter, ChangeDetectorRef, OnChanges, SimpleChanges } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { filter } from 'rxjs/operators';
+
+// Extend Highcharts types with our custom point properties
+type CustomPoint = {
+  x?: number;
+  y?: number;
+  margin?: number;
+  name?: string;
+  custom?: {
+    margin: number;
+  };
+};
+
+declare module 'highcharts' {
+  interface Point extends CustomPoint {}
+  interface PointOptionsObject extends CustomPoint {}
+}
 
 // Angular Material Modules
 import { MatButtonModule } from '@angular/material/button';
@@ -123,187 +140,159 @@ import { of } from 'rxjs';
     RouterModule
   ],
   template: `
-    <div class="flex flex-col h-full bg-gray-50 p-4 md:p-6">
-      <!-- Header Section -->
-      <div class="mb-6">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-          <div>
-            <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              <mat-icon class="text-purple-600">show_chart</mat-icon>
-              Price Analysis
-            </h2>
-            <p class="text-gray-600 mt-1">Analyze cost vs. selling price by genre</p>
-          </div>
-          
+    <div class="flex flex-col h-full relative">
+      <!-- Loading Overlay -->
+      <div *ngIf="loading && !chartData" class="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10">
+        <mat-spinner diameter="32"></mat-spinner>
+      </div>
+      
+      <!-- Chart Container Wrapper -->
+      <div class="flex-1 min-h-[400px] relative">
+
+      <!-- Error State -->
+      <div *ngIf="error" class="p-3 bg-red-50 text-red-700 text-sm rounded border border-red-100 flex items-start">
+        <mat-icon class="text-red-500 mr-2" style="font-size: 16px">error</mat-icon>
+        <div>{{ error }}</div>
+      </div>
+
+      <!-- Chart Content -->
+      <div class="flex flex-col h-full w-full" [class.opacity-50]="loading">
+        <!-- Header with controls -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
           <!-- Chart Type Selector -->
-          <div class="flex items-center gap-2 bg-white p-1 rounded-lg shadow-sm border border-gray-200">
+          <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-md">
             <button 
               *ngFor="let option of chartTypeOptions"
               (click)="changeChartType(option.value)"
-              [class.bg-purple-50]="chartType === option.value"
+              [class.bg-white]="chartType === option.value"
               [class.text-purple-700]="chartType === option.value"
-              [class.font-medium]="chartType === option.value"
-              class="px-4 py-2 text-sm rounded-md text-gray-600 hover:bg-gray-100 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-purple-100"
+              [class.shadow-sm]="chartType === option.value"
+              class="px-3 py-1.5 text-xs rounded flex items-center transition-colors"
             >
-              <mat-icon class="!w-5 !h-5 mr-1.5">{{ option.icon }}</mat-icon>
+              <mat-icon class="!w-4 !h-4 mr-1">{{ option.icon }}</mat-icon>
               {{ option.label }}
             </button>
           </div>
-        </div>
 
-        <!-- Custom Genre Selector -->
-        <div class="relative w-full max-w-xs">
-          <div class="relative">
+          <!-- Genre Selection -->
+          <div class="relative w-full sm:w-64">
             <button 
-              type="button"
               (click)="toggleGenreMenu()"
               (blur)="closeGenreMenu()"
-              class="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm text-left focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-150"
-              [class.ring-2]="isGenreMenuOpen"
-              [class.ring-purple-500]="isGenreMenuOpen"
-              [class.border-purple-500]="isGenreMenuOpen"
+              type="button" 
+              class="relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm flex items-center justify-between"
+              aria-haspopup="listbox"
+              aria-expanded="true"
+              aria-labelledby="listbox-label"
             >
-              <div class="flex items-center">
-                <span *ngIf="selectedGenreId" class="w-3 h-3 rounded-full mr-2" [style.background]="getGenreColor(selectedGenreId)"></span>
-                <span class="text-gray-700 truncate">
-                  {{ getSelectedGenreName() || 'Select a genre' }}
+              <span class="flex items-center">
+                <span class="block truncate">
+                  {{ selectedGenre ? selectedGenre.name : 'Select a genre' }}
                 </span>
-              </div>
-              <svg class="h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-              </svg>
+              </span>
+              <span class="ml-3 flex items-center pr-2 pointer-events-none">
+                <mat-icon class="h-5 w-5 text-gray-400">arrow_drop_down</mat-icon>
+              </span>
             </button>
-            
-            <!-- Dropdown menu -->
+
+            <!-- Genre dropdown menu -->
             <div 
               *ngIf="isGenreMenuOpen"
-              class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 ring-1 ring-black ring-opacity-5 focus:outline-none max-h-60 overflow-auto"
-              role="menu"
-              aria-orientation="vertical"
+              class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-56 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
               tabindex="-1"
+              role="listbox"
+              aria-labelledby="listbox-label"
+              aria-activedescendant="listbox-option-0"
             >
-              <!-- All Genres Option -->
-              <button
-                type="button"
-                (click)="onGenreChange(null)"
-                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 flex items-center"
-                [class.bg-gray-100]="!selectedGenreId"
-                role="menuitem"
+              <div 
+                *ngFor="let genre of genres; let i = index"
+                (click)="onGenreSelect(genre)"
+                [ngClass]="{
+                  'bg-indigo-600 text-white': selectedGenreId === genre.id,
+                  'text-gray-900': selectedGenreId !== genre.id
+                }"
+                class="cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white"
+                id="listbox-option-{{i}}"
+                role="option"
               >
-                <span class="w-3 h-3 rounded-full mr-2 bg-gray-300"></span>
-                <span>All Genres</span>
-              </button>
-              
-              <!-- Genre Options -->
-              <div *ngFor="let genre of genres" class="border-t border-gray-100">
-                <button
-                  type="button"
-                  (click)="onGenreChange(genre.id)"
-                  class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 flex items-center"
-                  [class.bg-purple-50]="selectedGenreId === genre.id"
-                  role="menuitem"
-                >
-                  <span class="w-3 h-3 rounded-full mr-2" [style.background]="getGenreColor(genre.id)"></span>
-                  <span class="truncate">{{ genre.name }}</span>
-                  <span *ngIf="selectedGenreId === genre.id" class="ml-auto text-purple-600">
-                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                    </svg>
+                <div class="flex items-center">
+                  <span 
+                    [ngClass]="{
+                      'font-semibold': selectedGenreId === genre.id,
+                      'font-normal': selectedGenreId !== genre.id
+                    }" 
+                    class="block truncate"
+                  >
+                    {{ genre.name }}
                   </span>
-                </button>
+                </div>
+                <span 
+                  *ngIf="selectedGenreId === genre.id"
+                  class="absolute inset-y-0 right-0 flex items-center pr-4 text-white"
+                >
+                  <mat-icon class="h-5 w-5">check</mat-icon>
+                </span>
+              </div>
+              <div 
+                *ngIf="!genres.length"
+                class="text-gray-500 p-3 text-sm"
+              >
+                No genres available
               </div>
             </div>
           </div>
-          
-          <!-- Selected genre hint -->
-          <p *ngIf="selectedGenreId" class="mt-1 text-xs text-gray-500">
-            Showing data for {{ getSelectedGenreName() }}
-          </p>
         </div>
-      </div>
 
-      <!-- Chart Section -->
-      <div class="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="p-4 border-b border-gray-100">
-          <h3 class="text-lg font-medium text-gray-800">
-            {{ chartType === 'scatter' ? 'Cost vs. Selling Price' : 'Profit Margin Analysis' }}
-          </h3>
+        <!-- Chart Container -->
+        <div class="flex-1 min-h-[250px] border rounded-lg bg-white p-2">
+          <div #chartContainer class="w-full h-full min-h-[400px]"></div>
         </div>
-        <!-- Chart Content -->
-        <div class="flex-1 flex flex-col relative">
-          <!-- Loading State -->
-          <div *ngIf="loading" class="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-10">
-            <mat-spinner diameter="48" class="mb-4"></mat-spinner>
-            <p class="text-gray-600 font-medium">Loading chart data...</p>
-          </div>
 
-          <!-- Error State -->
-          <div *ngIf="error" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10 p-6 text-center">
-            <mat-icon class="text-red-500 !w-12 !h-12 mb-3">error_outline</mat-icon>
-            <h4 class="text-lg font-medium text-gray-800 mb-1">Unable to load chart</h4>
-            <p class="text-gray-600 mb-4">{{ error }}</p>
-            <button 
-              mat-flat-button 
-              color="primary" 
-              (click)="loadChartData()"
-              class="!bg-purple-600 hover:!bg-purple-700"
-            >
-              <mat-icon class="!w-5 !h-5 mr-1">refresh</mat-icon>
-              Retry
-            </button>
-          </div>
-
-          <!-- Chart Container -->
-          <div #chartContainer class="w-full h-full min-h-[400px] p-4"></div>
-        </div>
-      </div>
-
-      <!-- Stats Section -->
-      <div *ngIf="chartData?.stats" class="mt-6">
-        <h3 class="text-lg font-medium mb-4 text-gray-800 flex items-center">
-          <mat-icon class="!w-5 !h-5 mr-1.5 text-purple-500">analytics</mat-icon>
-          Price Statistics
-        </h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all">
-            <div class="flex items-center justify-between mb-1">
-              <div class="text-sm font-medium text-gray-500">Avg. Cost Price</div>
+        <!-- Stats -->
+        <div *ngIf="chartData?.stats" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+          <!-- Average Cost Card -->
+          <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all">
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-sm font-medium text-gray-500">Avg. Cost</div>
               <mat-icon class="!w-5 !h-5 text-blue-500">payments</mat-icon>
             </div>
-            <div class="text-2xl font-bold text-gray-900">
-              {{ getStatValue('avgCostPrice') | currency:'INR':'symbol':'1.2-2' }}
+            <div class="text-xl font-bold text-gray-900">
+              {{ getStatValue('avgCostPrice') | currency:'INR':'symbol':'1.0-0' }}
             </div>
-            <div class="text-xs text-gray-400 mt-1">Per unit cost</div>
+            <div class="text-xs text-gray-400 mt-1">Per unit</div>
           </div>
           
-          <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all">
-            <div class="flex items-center justify-between mb-1">
-              <div class="text-sm font-medium text-gray-500">Avg. Selling Price</div>
-              <mat-icon class="!w-5 !h-5 text-green-500">price_check</mat-icon>
+          <!-- Average Price Card -->
+          <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all">
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-sm font-medium text-gray-500">Avg. Price</div>
+              <mat-icon class="!w-5 !h-5 text-green-500">price_change</mat-icon>
             </div>
-            <div class="text-2xl font-bold text-gray-900">
-              {{ getStatValue('avgSellingPrice') | currency:'INR':'symbol':'1.2-2' }}
+            <div class="text-xl font-bold text-gray-900">
+              {{ getStatValue('avgSellingPrice') | currency:'INR':'symbol':'1.0-0' }}
             </div>
-            <div class="text-xs text-gray-400 mt-1">Per unit price</div>
+            <div class="text-xs text-gray-400 mt-1">Selling price</div>
           </div>
           
-          <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all">
-            <div class="flex items-center justify-between mb-1">
-              <div class="text-sm font-medium text-gray-500">Avg. Profit Margin</div>
-              <mat-icon class="!w-5 !h-5 text-emerald-500">trending_up</mat-icon>
+          <!-- Margin Card -->
+          <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all">
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-sm font-medium text-gray-500">Avg. Margin</div>
+              <mat-icon class="!w-5 !h-5 text-purple-500">trending_up</mat-icon>
             </div>
-            <div class="text-2xl font-bold text-gray-900">
-              {{ getStatValue('avgProfitMargin') | number:'1.2-2' }}%
+            <div class="text-xl font-bold text-gray-900">
+              {{ getStatValue('avgProfitMargin') | number:'1.1-1' }}%
             </div>
-            <div class="text-xs text-gray-400 mt-1">Average margin</div>
+            <div class="text-xs text-gray-400 mt-1">Profit margin</div>
           </div>
           
-          <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all">
-            <div class="flex items-center justify-between mb-1">
+          <!-- Total Products Card -->
+          <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all">
+            <div class="flex items-center justify-between mb-2">
               <div class="text-sm font-medium text-gray-500">Total Products</div>
-              <mat-icon class="!w-5 !h-5 text-purple-500">inventory_2</mat-icon>
+              <mat-icon class="!w-5 !h-5 text-amber-500">inventory_2</mat-icon>
             </div>
-            <div class="text-2xl font-bold text-gray-900">
+            <div class="text-xl font-bold text-gray-900">
               {{ getStatValue('totalProducts') | number }}
             </div>
             <div class="text-xs text-gray-400 mt-1">In selected genre</div>
@@ -312,6 +301,13 @@ import { of } from 'rxjs';
     </div>
   `,
   styles: [`
+    .chart-container {
+      position: relative;
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 400px;
+    }
+    
     .chart-card {
       margin: 1rem;
       padding: 1rem;
@@ -356,15 +352,22 @@ import { of } from 'rxjs';
     }
   `]
 })
-export class PriceAnalysisChartComponent implements OnInit, OnDestroy, AfterViewInit {
+export class PriceAnalysisChartComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('chartContainer', { static: false }) chartContainer!: ElementRef<HTMLDivElement>;
-  // Chart configuration
+  
+  // Chart instance and configuration
   private chart: Highcharts.Chart | null = null;
+  private resizeObserver!: ResizeObserver;
+  private resizeTimer: any;
+  private isInitialized = false;
   chartData: PriceAnalysisData | null = null;
   loading = false;
   error: string | null = null;
   genres: Genre[] = [];
   selectedGenreId: number | null = null;
+  get selectedGenre(): Genre | null {
+    return this.genres.find(g => g.id === this.selectedGenreId) || null;
+  }
   chartType: 'scatter' | 'bubble' = 'scatter';
   chartTypeOptions: { label: string; value: 'scatter' | 'bubble'; icon: string }[] = [
     { label: 'Scatter', value: 'scatter', icon: 'scatter_plot' },
@@ -400,92 +403,206 @@ export class PriceAnalysisChartComponent implements OnInit, OnDestroy, AfterView
   ngOnInit(): void {
     console.log('ngOnInit called');
     this.loading = true;
+    
+    // Load genres first
     this.loadGenres();
+    
+    // Setup WebSocket for real-time updates
     this.setupWebSocket();
   }
-  
-  /**
-   * Public method to refresh the chart data
-   * @returns Promise that resolves when the chart data is refreshed
-   */
-  public async refresh(): Promise<void> {
-    return this.loadChartData();
+
+  ngAfterViewInit(): void {
+    console.log('ngAfterViewInit - Initializing chart component');
+    
+    // Set up resize observer for the chart container
+    this.setupResizeObserver();
+    
+    // Initial check for container
+    this.ensureChartContainer();
+    
+    // Set up a mutation observer to watch for container changes
+    this.setupContainerObserver();
   }
   
-  // Get color for a genre
-  getGenreColor(genreId: number): string {
-    return this.genreColors.get(genreId) || '#9CA3AF';
+  private setupResizeObserver(): void {
+    if (!this.chartContainer?.nativeElement) {
+      console.warn('Chart container not available for resize observation');
+      return;
+    }
+
+    this.resizeObserver = new ResizeObserver(entries => {
+      // Debounce resize events
+      clearTimeout(this.resizeTimer);
+      this.resizeTimer = setTimeout(() => {
+        entries.forEach(entry => {
+          if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+            console.log('Container resized, updating chart dimensions');
+            this.updateChartDimensions();
+          }
+        });
+      }, 100);
+    });
+
+    this.resizeObserver.observe(this.chartContainer.nativeElement);
   }
   
-  // Initialize genre colors with consistent hashing
-  private initializeGenreColors(): void {
-    const colors = [
-      '#3B82F6', // blue-500
-      '#10B981', // emerald-500
-      '#F59E0B', // amber-500
-      '#EF4444', // red-500
-      '#8B5CF6', // violet-500
-      '#EC4899', // pink-500
-      '#14B8A6', // teal-500
-      '#F97316', // orange-500
-      '#6366F1', // indigo-500
-      '#06B6D4'  // cyan-500
-    ];
-    
-    // Simple hash function to get consistent colors for genres
-    const hashCode = (str: string) => {
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
-      }
-      return Math.abs(hash);
-    };
-    
-    // Pre-generate colors for the first 100 genres
-    for (let i = 1; i <= 100; i++) {
-      const colorIndex = hashCode(`genre-${i}`) % colors.length;
-      this.genreColors.set(i, colors[colorIndex]);
+  private updateChartDimensions(): void {
+    if (!this.chart || !this.chartContainer?.nativeElement) {
+      return;
+    }
+
+    const container = this.chartContainer.nativeElement;
+    const width = container.offsetWidth;
+    const height = Math.max(container.offsetHeight, 400);
+
+    if (width > 0 && height > 0) {
+      this.chart.setSize(width, height, false);
     }
   }
   
-  // Get selected genre name
-  getSelectedGenreName(): string {
+  private ensureChartContainer(currentRetry = 0, maxRetries = 10): void {
+    if (this.chart) return;
+    if (!this.chartData) return;
+    
+    const container = this.chartContainer?.nativeElement;
+    if (!container) {
+      if (currentRetry < maxRetries) {
+        setTimeout(() => this.ensureChartContainer(currentRetry + 1, maxRetries), 100);
+      }
+      return;
+    }
+    
+    if (!document.body.contains(container) || container.offsetParent === null) {
+      if (currentRetry < maxRetries) {
+        setTimeout(() => this.ensureChartContainer(currentRetry + 1, maxRetries), 100);
+      }
+      return;
+    }
+    
+    if (container.offsetWidth === 0 || container.offsetHeight === 0) {
+      if (currentRetry < maxRetries) {
+        setTimeout(() => this.ensureChartContainer(currentRetry + 1, maxRetries), 100);
+      }
+      return;
+    }
+    
+    this.initializeChart();
+  }
+  
+  private setupContainerObserver(): void {
+    if (!this.chartContainer) return;
+    
+    const observer = new MutationObserver(() => {
+      if (!this.chart && this.chartData) {
+        this.ensureChartContainer();
+      }
+    });
+    
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    this.destroy$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      observer.disconnect();
+    });
+  }
+  
+  private getSelectedGenreName(): string {
     if (!this.selectedGenreId) return 'All Genres';
     const genre = this.genres.find(g => g.id === this.selectedGenreId);
     return genre ? genre.name : 'Selected Genre';
   }
   
-  // Track by function for better ngFor performance
-  trackByGenreId(index: number, genre: Genre): number {
-    return genre.id;
-  }
-  
-  // Change chart type with animation
-  changeChartType(type: 'scatter' | 'bubble'): void {
-    if (this.chartType !== type) {
-      this.chartType = type;
-      this.onChartTypeChange();
+  private initializeGenreColors(): void {
+    const colors = [
+      '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
+      '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#06B6D4'
+    ];
+    
+    const hashCode = (str: string) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+      }
+      return Math.abs(hash);
+    };
+    
+    for (let i = 1; i <= 100; i++) {
+      const colorIndex = hashCode(`genre-${i}`) % colors.length;
+      this.genreColors.set(i, colors[colorIndex]);
     }
   }
 
-  ngAfterViewInit(): void {
-    console.log('ngAfterViewInit called');
-    console.log('Chart container in ngAfterViewInit:', !!this.chartContainer?.nativeElement);
-    if (this.selectedGenreId) {
-      this.loadChartData();
+  /**
+   * Changes the chart type and reinitializes the chart
+   * @param type The new chart type ('scatter' | 'bubble')
+   */
+  public changeChartType(type: 'scatter' | 'bubble'): void {
+    if (this.chartType !== type) {
+      this.chartType = type;
+      this.initializeChart();
     }
+  }
+
+  /**
+   * Public method to refresh the chart data
+   * @returns Promise that resolves when the chart data is loaded
+   */
+  public refresh(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        this.loadChartData();
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 
   ngOnDestroy(): void {
+    // Clean up chart resources
+    this.destroyChart();
+    
+    // Complete all subscriptions
     this.destroy$.next();
     this.destroy$.complete();
+    this.destroyChart();
     
-    // Clean up chart
-    if (this.chart) {
-      this.chart.destroy();
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+    }
+    
+    if (this.resizeTimer) {
+      clearTimeout(this.resizeTimer);
+    }
+  }
+
+  private destroyChart(): void {
+    if (!this.chart) return;
+    
+    try {
+      // Store reference to the chart
+      const chart = this.chart as any; // Use type assertion to access renderTo
       this.chart = null;
+      
+      // Use requestAnimationFrame to ensure smooth cleanup
+      requestAnimationFrame(() => {
+        try {
+          // Check if the chart is still attached to the DOM
+          if (chart.renderTo?.parentNode) {
+            chart.destroy();
+          }
+        } catch (e) {
+          console.error('Error destroying chart:', e);
+        }
+      });
+    } catch (e) {
+      console.error('Error during chart cleanup:', e);
+    }
+    
+    // Clear the container if it exists
+    if (this.chartContainer?.nativeElement) {
+      this.chartContainer.nativeElement.innerHTML = '';
     }
   }
 
@@ -532,10 +649,18 @@ export class PriceAnalysisChartComponent implements OnInit, OnDestroy, AfterView
     }, 200);
   }
   
-  onGenreChange(genreId: number | null): void {
-    console.log('Genre changed to:', genreId);
-    this.selectedGenreId = genreId;
-    this.isGenreMenuOpen = false;
+  onGenreSelect(genre: Genre): void {
+    console.log('Genre selected:', genre);
+    if (this.selectedGenreId !== genre.id) {
+      this.selectedGenreId = genre.id;
+      this.isGenreMenuOpen = false;
+      this.loadChartData();
+    }
+  }
+
+  onGenreChange(event: any): void {
+    // This is kept for compatibility with mat-select if needed
+    this.selectedGenreId = event.value;
     this.loadChartData();
   }
 
@@ -545,12 +670,53 @@ export class PriceAnalysisChartComponent implements OnInit, OnDestroy, AfterView
     }
   }
 
-  public loadChartData(): void {
+  private async loadChartData(): Promise<void> {
     console.log('loadChartData called with genreId:', this.selectedGenreId);
+    
+    // Reset state
+    this.loading = true;
+    this.error = null;
+    this.chartData = null;
+    this.cdr.detectChanges();
+    
+    // Clear any existing chart
+    this.destroyChart();
+    
     if (!this.selectedGenreId) {
       console.log('No genre selected, skipping data load');
+      this.loading = false;
+      this.cdr.detectChanges();
       return;
     }
+    
+    // Ensure container is ready before proceeding
+    const containerReady = await this.waitForContainer();
+    if (!containerReady) {
+      console.error('Giving up on loading chart data - container not ready');
+      this.loading = false;
+      this.cdr.detectChanges();
+      return;
+    }
+    
+    // Get container reference
+    const container = this.chartContainer?.nativeElement;
+    
+    // Ensure the chart container is ready
+    if (!container) {
+      console.error('Chart container not found');
+      this.error = 'Chart container not available';
+      this.loading = false;
+      this.cdr.detectChanges();
+      return;
+    }
+    
+    // Reset container styles
+    container.style.display = 'block';
+    container.style.visibility = 'visible';
+    container.style.width = '100%';
+    container.style.height = '100%';
+    container.style.minHeight = '400px';
+    container.innerHTML = ''; // Clear any existing content
 
     console.log('Loading chart data for genre ID:', this.selectedGenreId);
     this.loading = true;
@@ -561,28 +727,43 @@ export class PriceAnalysisChartComponent implements OnInit, OnDestroy, AfterView
     
     this.analyticsService.getPriceAnalysis(this.selectedGenreId)
       .pipe(
-        tap(() => this.loading = false),
-        catchError(err => {
+        finalize(() => {
           this.loading = false;
-          this.error = 'Failed to load price analysis data';
+          this.cdr.detectChanges();
+        }),
+        catchError(err => {
+          this.error = 'Failed to load price analysis data. Please try again.';
           console.error('Error loading price analysis:', err);
+          this.showError(this.error);
           return of(null);
         }),
         takeUntil(this.destroy$)
       )
-      .subscribe(data => {
-        if (data) {
-          this.chartData = data.data;  
-          this.currentGenreName = this.genres.find(g => g.id === this.selectedGenreId)?.name || '';
-          
-          // Initialize or update the chart
-          if (this.chart) {
-            this.updateChart();
-          } else if (this.chartContainer?.nativeElement) {
-            this.initializeChart();
+      .subscribe({
+        next: (response) => {
+          if (response && response.data) {
+            this.chartData = response.data;
+            this.currentGenreName = this.genres.find(g => g.id === this.selectedGenreId)?.name || '';
+            
+            // Destroy existing chart if it exists
+            if (this.chart) {
+              this.destroyChart();
+            }
+            
+            // Initialize new chart
+            if (this.chartContainer?.nativeElement) {
+              // Initialize chart with retry logic in the next tick
+              Promise.resolve().then(() => {
+                this.initializeChart();
+                this.cdr.detectChanges();
+              });
+            }
           }
-          
-          this.updateChartData(); // Emit the updated data
+        },
+        error: (err) => {
+          console.error('Error in subscription:', err);
+          this.error = 'An error occurred while loading the chart data.';
+          this.showError(this.error);
         }
       });
   }
@@ -591,44 +772,114 @@ export class PriceAnalysisChartComponent implements OnInit, OnDestroy, AfterView
     // No longer need to emit data to parent
   }
 
+  /**
+   * Waits for the chart container to be available in the DOM
+   */
+  private async waitForContainer(maxRetries = 10, delay = 100): Promise<boolean> {
+    for (let i = 0; i < maxRetries; i++) {
+      if (this.isContainerReady()) {
+        console.log('Container is ready');
+        return true;
+      }
+      
+      console.log(`Waiting for container... (${i + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+    
+    console.error(`Container not ready after ${maxRetries} attempts`);
+    return false;
+  }
+  
+  private isContainerReady(): boolean {
+    if (!this.chartContainer?.nativeElement) {
+      return false;
+    }
+    
+    const container = this.chartContainer.nativeElement;
+    return document.body.contains(container) && 
+           container.offsetParent !== null && 
+           container.offsetWidth > 0 && 
+           container.offsetHeight > 0;
+  }
+
   private initializeChart(): void {
     console.log('initializeChart called');
-    console.log('Chart container exists:', !!this.chartContainer?.nativeElement);
     
     if (!this.chartContainer?.nativeElement) {
-      console.error('Chart container not found');
+      console.error('Cannot initialize chart: container not available');
       return;
     }
     
-    // Ensure the container has proper dimensions
     const container = this.chartContainer.nativeElement;
+    
+    // Ensure container has explicit dimensions
+    const containerWidth = Math.max(container.offsetWidth || 800, 100); // Minimum width of 100px
+    const containerHeight = Math.max(container.offsetHeight || 400, 400); // Minimum height of 400px
+    
+    // Set explicit dimensions
+    container.style.width = `${containerWidth}px`;
+    container.style.height = `${containerHeight}px`;
+    container.style.minHeight = '400px';
+    container.style.position = 'relative';
+    
+    // Clear any existing content
+    container.innerHTML = '';
+    
+    if (!this.chartData?.products?.length) {
+      console.warn('No chart data available');
+      this.error = 'No data available for the selected genre';
+      this.loading = false;
+      this.cdr.detectChanges();
+      return;
+    }
+    
+    // Ensure container is visible and has dimensions
+    container.style.display = 'block';
+    container.style.visibility = 'visible';
     container.style.width = '100%';
     container.style.height = '100%';
-    container.style.minHeight = '400px'; // Ensure minimum height for better visibility
-
+    container.style.minHeight = '400px';
+    container.innerHTML = ''; // Clear any existing content
+    
     try {
       const chartData = this.getChartData();
       
       if (!chartData.length) {
-        if (this.chart) {
-          this.chart.showLoading('No data available');
-        }
+        console.warn('No valid data points to display');
+        this.error = 'No valid data points to display';
+        this.loading = false;
+        this.cdr.detectChanges();
         return;
       }
 
+      // Double-check container is still in the DOM
+      if (!document.body.contains(container)) {
+        console.warn('Chart container is not in the DOM, will retry...');
+        this.ensureChartContainer(0, 3); // Retry up to 3 times with 100ms delay
+        return;
+      }
+
+      // Create chart options
       const options: Highcharts.Options = {
         chart: {
           type: this.chartType,
+          width: container.offsetWidth,
+          height: container.offsetHeight,
+          backgroundColor: 'transparent',
+          style: {
+            fontFamily: 'Roboto, "Helvetica Neue", sans-serif'
+          },
+          animation: true,
           zooming: {
             type: 'xy'
-          },
-          backgroundColor: 'transparent'
+          }
         },
         title: {
-          text: `Price Analysis ${this.selectedGenreId ? `- ${this.currentGenreName}` : ''}`,
+          text: `Price Analysis - ${this.getSelectedGenreName()}`,
           style: {
+            color: '#333',
             fontSize: '16px',
-            fontWeight: 'bold'
+            fontWeight: '500'
           }
         },
         subtitle: {
@@ -640,157 +891,133 @@ export class PriceAnalysisChartComponent implements OnInit, OnDestroy, AfterView
           },
           startOnTick: true,
           endOnTick: true,
-          showLastLabel: true
+          showLastLabel: true,
+          showFirstLabel: true
         },
         yAxis: {
           title: {
             text: 'Selling Price (₹)'
-          }
+          },
+          min: 0
         },
         legend: {
-          enabled: true
+          enabled: true,
+          layout: 'horizontal',
+          align: 'center',
+          verticalAlign: 'bottom',
+          borderWidth: 0,
+          itemStyle: {
+            color: '#333',
+            fontSize: '12px'
+          }
         },
         plotOptions: {
           scatter: {
-            states: {
-              hover: {
-                enabled: true,
-                lineColor: 'rgb(100,100,100)'
-              }
-            },
             marker: {
               radius: 5,
               states: {
                 hover: {
-                  enabled: false
+                  enabled: true,
+                  lineColor: 'rgb(100,100,100)'
                 }
               }
             },
-            tooltip: {
-              useHTML: true,
-              formatter: this.getTooltipFormatter()
+            states: {
+              hover: {
+                enabled: true,
+                halo: {
+                  size: 5,
+                  opacity: 0.2
+                }
+              }
             }
           },
           bubble: {
             minSize: 10,
-            maxSize: '10%',
-            tooltip: {
-              useHTML: true,
-              formatter: this.getTooltipFormatter()
-            }
+            maxSize: '10%'
           }
         },
         series: [{
           type: this.chartType,
+          name: 'Products',
           data: chartData,
+          color: '#3f51b5',
+          marker: {
+            fillColor: 'rgba(63, 81, 181, 0.8)',
+            lineColor: 'rgba(63, 81, 181, 1)',
+            lineWidth: 1,
+            radius: 4,
+            states: {
+              hover: {
+                enabled: true,
+                lineWidth: 2
+              }
+            }
+          },
           tooltip: {
             useHTML: true,
             formatter: this.getTooltipFormatter()
-          },
-          states: {
-            hover: {
-              halo: {
-                size: 5,
-                opacity: 0.2
-              }
-            }
           }
-        } as Highcharts.SeriesOptionsType],
+        }],
         tooltip: {
           useHTML: true,
           formatter: this.getTooltipFormatter()
         },
-        exporting: {
-          enabled: true
+        credits: {
+          enabled: false
         }
-      }
-      console.log('Initializing chart with options:', options);
-      
+      };
+
+      // Create the chart
       try {
-        this.chart = new Highcharts.Chart(
-          this.chartContainer.nativeElement,
-          options
-        );
+        this.chart = Highcharts.chart(container, options);
+        
+        // Ensure the chart is properly sized
+        setTimeout(() => {
+          if (this.chart) {
+            this.chart.reflow();
+          }
+        }, 100);
+        
         console.log('Highcharts chart instance created successfully');
         console.log('Chart container dimensions:', {
-          width: this.chartContainer.nativeElement.offsetWidth,
-          height: this.chartContainer.nativeElement.offsetHeight
+          width: container.offsetWidth,
+          height: container.offsetHeight
         });
+        
+        // Clear any loading states
+        this.error = null;
+        this.loading = false;
+        this.cdr.detectChanges();
+        
       } catch (chartError) {
         console.error('Error creating Highcharts instance:', chartError);
         throw chartError;
       }
     } catch (error) {
       console.error('Error initializing chart:', error);
-      this.error = 'Failed to initialize chart. Please refresh the page or try again later.';
-      this.showError(this.error);
+      this.error = 'Failed to initialize chart: ' + (error instanceof Error ? error.message : 'Unknown error');
+      this.loading = false;
       this.cdr.detectChanges();
     }
   }
 
-  private updateChart(): void {
-    if (!this.chart) {
-      this.initializeChart();
-      return;
-    }
-    
-    // Ensure the chart container has proper dimensions before updating
-    if (this.chartContainer?.nativeElement) {
-      const container = this.chartContainer.nativeElement;
-      container.style.width = '100%';
-      container.style.height = '100%';
-    }
-
-    try {
-      const chartData = this.getChartData();
-      
-      if (!chartData.length) {
-        this.chart.showLoading('No data available');
-        return;
-      }
-
-      this.chart.update({
-        series: [{
-          type: this.chartType,
-          data: chartData,
-          tooltip: {
-            useHTML: true,
-            formatter: this.getTooltipFormatter()
-          },
-          states: {
-            hover: {
-              halo: {
-                size: 5,
-                opacity: 0.2
-              }
-            }
-          }
-        } as Highcharts.SeriesOptionsType],
-        title: {
-          text: `Price Analysis ${this.selectedGenreId ? `- ${this.currentGenreName}` : ''}`
-        },
-        subtitle: {
-          text: `Showing ${chartData.length} products`
-        }
-      });
-
-      // Hide loading indicator after update
-      if (this.chart.loading) {
-        this.chart.hideLoading();
-      }
-    } catch (error) {
-      console.error('Error updating chart:', error);
-      this.error = 'Error updating chart. Please try again.';
-      this.showError(this.error);
-    }
-  }
-
-  private getChartData(): ChartPoint[] {
+  /**
+   * Get chart data in the format expected by Highcharts
+   */
+  private getChartData(): Array<{
+    x: number;
+    y: number;
+    z?: number;
+    margin: number;
+    name: string;
+    color: string;
+  }> {
     if (!this.chartData?.products?.length) {
       return [];
     }
 
-    return this.chartData.products.map(product => {
+    return this.chartData.products.map((product: any) => {
       const margin = (product.profitMargin || 0) * 100;
       return {
         x: product.costPrice || 0,
@@ -798,26 +1025,89 @@ export class PriceAnalysisChartComponent implements OnInit, OnDestroy, AfterView
         z: this.chartType === 'bubble' ? Math.abs(margin) * 0.5 : undefined,
         margin: margin,
         name: product.title || 'Unknown Product',
-        color: this.getPointColor(product)
-      } as any; // Using type assertion to avoid TypeScript errors with custom properties
+        color: this.getPointColor({ margin })
+      };
     });
   }
 
+  /**
+   * Get the color for a data point based on its margin
+   */
+  private getPointColor(point: { margin?: number } | null): string {
+    if (!point) return '#7cb5ec'; // Default color
+    
+    // Use margin to determine color (red for negative, green for positive)
+    const margin = point.margin || 0;
+    if (margin < 0) return '#ff5c5c'; // Red for negative margin
+    if (margin > 20) return '#50b432'; // Dark green for high margin
+    return '#7cb5ec'; // Default blue
+  }
+
+  /**
+   * Set up WebSocket connection for real-time updates
+   */
+  private setupWebSocket(): void {
+    this.webSocketService.getPriceUpdates()
+      .pipe(
+        filter(update => update !== null && update.genreId === this.selectedGenreId),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: () => {
+          // When we get a price update for the current genre, refresh the chart data
+          this.loadChartData();
+        },
+        error: (error: Error) => {
+          console.error('WebSocket error:', error);
+          this.showError('Connection to real-time updates lost. Please refresh the page.');
+        }
+      });
+  }
+
+  /**
+   * Get the tooltip formatter for Highcharts
+   */
   private getTooltipFormatter(): Highcharts.TooltipFormatterCallbackFunction {
-    // Use a type assertion to work around the TypeScript type checking
-    // for the Highcharts tooltip formatter
-    return function(this: any) {
+    const component = this; // Capture the component context
+    
+    // Create a type-safe formatter function
+    const formatter: Highcharts.TooltipFormatterCallbackFunction = function() {
       try {
-        const point = this.point as Highcharts.Point & { margin?: number; name?: string; x?: number; y?: number };
-        const x = typeof point.x === 'number' ? point.x.toFixed(2) : 'N/A';
-        const y = typeof point.y === 'number' ? point.y.toFixed(2) : 'N/A';
-        const margin = point.margin?.toFixed(2) || '0.00';
-        const name = point.name || 'Product';
+        // 'this' is bound to the Highcharts point context
+        const point = (this as any).point as CustomPoint;
         
-        // Use string concatenation instead of template literals for better compatibility
+        // Safely extract values with defaults
+        const pointX = typeof point?.x === 'number' ? point.x : 0;
+        const pointY = typeof point?.y === 'number' ? point.y : 0;
+        const pointName = point?.name || 'Product';
+        
+        // Handle both direct margin and custom.margin with proper null checks
+        const marginValue = typeof point?.margin === 'number' 
+          ? point.margin 
+          : (point?.custom && typeof point.custom.margin === 'number' 
+              ? point.custom.margin 
+              : 0);
+        
+        // Format values with error handling
+        const formatValue = (value: unknown): string => {
+          try {
+            if (typeof value === 'number' && !isNaN(value)) {
+              return value.toFixed(2);
+            }
+            return '0.00';
+          } catch {
+            return '0.00';
+          }
+        };
+        
+        const x = formatValue(pointX);
+        const y = formatValue(pointY);
+        const margin = formatValue(marginValue);
+        
+        // Build tooltip HTML safely
         return [
           '<div style="padding: 8px; min-width: 200px">',
-          '<b>', name, '</b><br>',
+          '<b>', component.escapeHtml(String(pointName)), '</b><br>',
           '<hr style="margin: 4px 0">',
           'Cost: ₹', x, '<br>',
           'Selling: ₹', y, '<br>',
@@ -826,41 +1116,28 @@ export class PriceAnalysisChartComponent implements OnInit, OnDestroy, AfterView
         ].join('');
       } catch (error) {
         console.error('Error in tooltip formatter:', error);
-        return 'Error loading tooltip';
+        return '<div>Error loading tooltip</div>';
       }
     };
-  }
-
-  private getPointColor(product: PriceAnalysisProduct): string {
-    if (!product.costPrice || !product.sellingPrice) return '#CCCCCC'; // Default gray for invalid data
     
-    const profitMargin = product.profitMargin || ((product.sellingPrice - product.costPrice) / product.costPrice);
-    
-    // Color based on profit margin
-    if (profitMargin > 0.5) return '#2ecc71'; // Green for high margin
-    if (profitMargin > 0.2) return '#3498db'; // Blue for medium-high margin
-    if (profitMargin > 0) return '#f39c12';   // Orange for low margin
-    if (profitMargin === 0) return '#95a5a6'; // Gray for break-even
-    return '#e74c3c'; // Red for loss
+    return formatter;
+  }
+  
+  // Helper method to safely escape HTML in tooltips
+  private escapeHtml(unsafe: string): string {
+    if (!unsafe) return '';
+    return unsafe
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
-  private setupWebSocket(): void {
-    this.webSocketService.getPriceUpdates()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (update) => {
-          if (update && update.genreId === this.selectedGenreId) {
-            this.showSuccess('Price data updated. Refreshing...');
-            this.loadChartData();
-          }
-        },
-        error: (error) => {
-          console.error('WebSocket error:', error);
-          this.showError('Connection to real-time updates lost. Please refresh the page.');
-        }
-      });
-  }
-
+  /**
+   * Show an error message to the user
+   * @param message The error message to display
+   */
   private showError(message: string): void {
     this.snackBar.open(message, 'Dismiss', {
       duration: 5000,
@@ -870,6 +1147,10 @@ export class PriceAnalysisChartComponent implements OnInit, OnDestroy, AfterView
     });
   }
 
+  /**
+   * Show a success message to the user
+   * @param message The success message to display
+   */
   private showSuccess(message: string): void {
     this.snackBar.open(message, 'Dismiss', {
       duration: 3000,
@@ -877,5 +1158,29 @@ export class PriceAnalysisChartComponent implements OnInit, OnDestroy, AfterView
       horizontalPosition: 'center',
       verticalPosition: 'top'
     });
+  }
+
+  /**
+   * Update the chart with new data
+   */
+  private updateChart(): void {
+    if (!this.chart) {
+      this.initializeChart();
+      return;
+    }
+
+    const seriesData = this.getChartData();
+    
+    this.chart.update({
+      series: [{
+        type: this.chartType,
+        data: seriesData,
+        name: 'Products',
+        tooltip: {
+          useHTML: true,
+          formatter: this.getTooltipFormatter()
+        }
+      }]
+    } as Highcharts.Options, true, true);
   }
 }
