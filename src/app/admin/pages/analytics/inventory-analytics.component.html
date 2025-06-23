@@ -24,14 +24,29 @@
           <mat-icon class="text-blue-600 mr-1" style="font-size: 18px">inventory_2</mat-icon>
           Stock Levels
         </mat-card-title>
+        <div class="flex-1"></div>
+        <div class="flex items-center space-x-1">
+          <button mat-icon-button [matMenuTriggerFor]="timeRangeMenu" matTooltip="Time range">
+            <mat-icon class="text-gray-500" style="font-size: 20px;">date_range</mat-icon>
+          </button>
+          <mat-menu #timeRangeMenu="matMenu">
+            <button mat-menu-item (click)="setTimeRange('7d')" [class.bg-blue-50]="timeRange === '7d'">
+              <span>Last 7 days</span>
+              <mat-icon *ngIf="timeRange === '7d'" class="ml-2 text-blue-600">check</mat-icon>
+            </button>
+            <button mat-menu-item (click)="setTimeRange('30d')" [class.bg-blue-50]="timeRange === '30d'">
+              <span>Last 30 days</span>
+              <mat-icon *ngIf="timeRange === '30d'" class="ml-2 text-blue-600">check</mat-icon>
+            </button>
+            <button mat-menu-item (click)="setTimeRange('90d')" [class.bg-blue-50]="timeRange === '90d'">
+              <span>Last 90 days</span>
+              <mat-icon *ngIf="timeRange === '90d'" class="ml-2 text-blue-600">check</mat-icon>
+            </button>
+          </mat-menu>
+        </div>
       </mat-card-header>
       <mat-card-content class="flex-1 p-2">
-        <div class="w-full h-full min-h-[300px] flex items-center justify-center text-gray-400">
-          <div class="text-center">
-            <mat-icon class="text-4xl mb-2 opacity-50">bar_chart</mat-icon>
-            <p>Stock levels chart will be displayed here</p>
-          </div>
-        </div>
+        <app-stock-levels-chart class="w-full h-full"></app-stock-levels-chart>
       </mat-card-content>
     </mat-card>
 

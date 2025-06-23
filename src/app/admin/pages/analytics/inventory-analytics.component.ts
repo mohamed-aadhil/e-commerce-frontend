@@ -1,14 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject } from 'rxjs';
 import { WebSocketService } from '../../services/websocket.service';
+import { StockLevelsChartComponent } from '../../components/analytics/stock-levels-chart/stock-levels-chart.component';
 
 @Component({
   selector: 'app-inventory-analytics',
@@ -19,10 +21,11 @@ import { WebSocketService } from '../../services/websocket.service';
     MatDividerModule,
     MatIconModule,
     MatButtonModule,
+    MatMenuModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
     MatSnackBarModule,
-    // Add chart components here later
+    StockLevelsChartComponent
   ],
   templateUrl: './inventory-analytics.component.html'
 })
@@ -33,6 +36,8 @@ export class InventoryAnalyticsComponent implements OnInit, OnDestroy {
   isRefreshing = false;
   lastUpdated = new Date();
   timeRange = '30d';
+  
+  @ViewChild(StockLevelsChartComponent) stockLevelsChart!: StockLevelsChartComponent;
   
   private destroy$ = new Subject<void>();
 
@@ -64,7 +69,14 @@ export class InventoryAnalyticsComponent implements OnInit, OnDestroy {
     });
     
     try {
-      // Add refresh logic for child components here
+      // Refresh all child components
+      const refreshPromises: Promise<any>[] = [];
+      
+      if (this.stockLevelsChart) {
+        refreshPromises.push(this.stockLevelsChart.refresh());
+      }
+      
+      await Promise.all(refreshPromises);
       this.lastUpdated = new Date();
       
       snackBarRef.dismiss();

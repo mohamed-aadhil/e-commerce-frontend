@@ -2,7 +2,7 @@ import { Injectable, OnDestroy } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { GenreDataUpdate, PriceDataUpdate } from '../models/analytics.model';
+import { GenreDataUpdate, PriceDataUpdate, StockLevelUpdate } from '../models/analytics.model';
 
 @Injectable({
   providedIn: 'root'
@@ -12,6 +12,7 @@ export class WebSocketService implements OnDestroy {
   private connected = new BehaviorSubject<boolean>(false);
   private genreUpdates = new BehaviorSubject<GenreDataUpdate | null>(null);
   private priceUpdates = new BehaviorSubject<PriceDataUpdate | null>(null);
+  private inventoryUpdates = new BehaviorSubject<StockLevelUpdate | null>(null);
 
   constructor() {
     // Initialize socket connection
@@ -60,8 +61,8 @@ export class WebSocketService implements OnDestroy {
   /**
    * Join the analytics room to receive updates
    */
-  private joinAnalyticsRoom(): void {
-    this.socket.emit('joinAnalyticsRoom');
+  joinAnalyticsRoom(): void {
+    this.socket.emit('join-analytics');
   }
 
   /**
@@ -121,6 +122,33 @@ export class WebSocketService implements OnDestroy {
   }
 
   /**
+   * Get observable for inventory updates
+   */
+  getInventoryUpdates(): Observable<StockLevelUpdate | null> {
+    return this.inventoryUpdates.asObservable();
+  }
+
+  /**
+   * Subscribe to a specific event
+   * @deprecated Use specific getter methods instead
+   */
+  on(eventName: string): Observable<any> {
+    return new Observable(subscriber => {
+      const listener = (data: any) => subscriber.next(data);
+      this.socket.on(eventName, listener);
+      return () => this.socket.off(eventName, listener);
+    });
+  }
+
+  /**
+   * Emit an event to the server
+   * @deprecated Use specific methods instead
+   */
+  emit(eventName: string, ...args: any[]): void {
+    this.socket.emit(eventName, ...args);
+  }
+
+  /**
    * Connect to WebSocket server and return an observable of events
    */
   connect(): Observable<{ type: string; [key: string]: any }> {
@@ -173,6 +201,8 @@ export class WebSocketService implements OnDestroy {
     this.socket.off('connect');
     this.socket.off('disconnect');
     this.socket.off('genre-data-updated');
+    this.socket.off('price-data-updated');
+    this.socket.off('inventory-updated');
     this.socket.off('connect_error');
     this.socket.disconnect();
   }

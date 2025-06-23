@@ -1,15 +1,19 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, take } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { WebSocketService } from './websocket.service';
 
 // Import models
 import { 
   Genre, 
   GenreDistribution, 
   PriceAnalysisData, 
-  PriceAnalysisProduct
+  PriceAnalysisProduct,
+  StockLevelData,
+  StockLevelStats,
+  StockLevelUpdate
 } from '../models/analytics.model';
 
 @Injectable({
@@ -18,7 +22,10 @@ import {
 export class AnalyticsService {
   private apiUrl = '/api/v1/analytics';
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private websocketService: WebSocketService
+  ) {}
 
   /**
    * Get all available genres
@@ -227,5 +234,87 @@ export class AnalyticsService {
     return '#' + color.replace(/^#/, '').replace(/../g, color => 
       ('0' + Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2)
     );
+  }
+
+  /**
+   * Get stock levels data, optionally filtered by genre
+   * @param genreId Optional genre ID to filter by
+   */
+  getStockLevels(genreId?: number): Observable<StockLevelData> {
+    const url = genreId 
+      ? `${this.apiUrl}/stock-levels/${genreId}`
+      : `${this.apiUrl}/stock-levels`;
+      
+    return this.http.get<{ success: boolean; data: StockLevelData }>(url).pipe(
+      map(response => {
+        const data = response.data || { products: [], stats: this.getEmptyStockStats() };
+        // Calculate inStockCount if not provided
+        if (data.stats && data.stats.totalProducts !== undefined) {
+          data.stats.inStockCount = data.stats.totalProducts - 
+            (data.stats.lowStockCount || 0) - 
+            (data.stats.outOfStockCount || 0);
+        }
+        return data;
+      }),
+      catchError(error => {
+        console.error('Error fetching stock levels:', error);
+        return of({
+          products: [],
+          stats: this.getEmptyStockStats()
+        });
+      })
+    );
+  }
+
+  /**
+   * Subscribe to real-time stock level updates
+   * @param genreId Optional genre ID to filter by
+   * @param callback Function to call when updates are received
+   * @returns Unsubscribe function
+   */
+  subscribeToStockLevelUpdates(genreId: number | null, callback: (data: StockLevelData) => void): () => void {
+    // Subscribe to inventory updates
+    const subscription = this.websocketService.getInventoryUpdates().subscribe({
+      next: (update: StockLevelUpdate | null) => {
+        if (update) {
+          // If we're filtering by a specific genre, only process matching updates
+          if (genreId === null || (update.genreId !== undefined && update.genreId === genreId)) {
+            // Calculate inStockCount if not provided
+            const stockData = update.stockLevels;
+            if (stockData.stats && stockData.stats.totalProducts !== undefined) {
+              stockData.stats.inStockCount = 
+                stockData.stats.totalProducts - 
+                (stockData.stats.lowStockCount || 0) - 
+                (stockData.stats.outOfStockCount || 0);
+            }
+            callback(stockData);
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Error in stock level subscription:', error);
+      }
+    });
+
+    // Join the analytics room
+    this.websocketService.joinAnalyticsRoom();
+    
+    // Return cleanup function
+    return () => {
+      subscription.unsubscribe();
+    };
+  }
+
+  /**
+   * Get empty stock level stats object
+   */
+  private getEmptyStockStats(): StockLevelStats {
+    return {
+      totalStock: 0,
+      lowStockCount: 0,
+      outOfStockCount: 0,
+      inStockCount: 0,
+      totalProducts: 0
+    };
   }
 }

@@ -1,0 +1,326 @@
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Input, ChangeDetectorRef } from '@angular/core';
+import { InventoryService } from '@app/core/services/inventory.service';
+import { WebSocketService } from '@app/core/services/websocket.service';
+import * as echarts from 'echarts';
+import { debounceTime, Subject, takeUntil } from 'rxjs';
+
+type ChartData = {
+  stats: {
+    inStockCount: number;
+    lowStockCount: number;
+    outOfStockCount: number;
+    totalItems: number;
+  };
+  timestamp: string;
+};
+
+type ChartType = 'pie' | 'bar' | 'line';
+
+interface SeriesDataItem {
+  name: string;
+  value: number;
+  itemStyle: {
+    color: string;
+  };
+}
+
+@Component({
+  selector: 'app-stock-levels-chart',
+  templateUrl: './stock-levels-chart.component.html',
+  styleUrls: ['./stock-levels-chart.component.scss']
+})
+export class StockLevelsChartComponent implements OnInit, OnDestroy {
+  @ViewChild('chartContainer') private chartContainer!: ElementRef<HTMLDivElement>;
+  @Input() genreId: string | null = null;
+  
+  private chart: echarts.ECharts | null = null;
+  private destroy$ = new Subject<void>();
+  private resize$ = new Subject<void>();
+  
+  chartData: ChartData | null = null;
+  isLoading = false;
+  error: string | null = null;
+  chartType: ChartType = 'pie';
+  
+  readonly COLORS = {
+    inStock: '#10B981',
+    lowStock: '#F59E0B',
+    outOfStock: '#EF4444'
+  };
+
+  constructor(
+    private inventoryService: InventoryService,
+    private webSocketService: WebSocketService,
+    private cdr: ChangeDetectorRef
+  ) {}
+
+  ngOnInit(): void {
+    this.setupWebSocketListener();
+    this.setupResizeHandler();
+    this.loadData();
+  }
+
+  ngOnDestroy(): void {
+    this.destroyChart();
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.resize$.complete();
+    window.removeEventListener('resize', this.handleResize);
+  }
+
+  private setupWebSocketListener(): void {
+    this.webSocketService.inventoryUpdates$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.loadData());
+  }
+
+  private setupResizeHandler(): void {
+    this.resize$
+      .pipe(
+        debounceTime(300),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => this.handleResize());
+
+    window.addEventListener('resize', () => this.resize$.next());
+  }
+
+  private handleResize = (): void => {
+    if (this.chart) {
+      this.chart.resize();
+    }
+  };
+
+  private loadData(): void {
+    if (this.isLoading) return;
+    
+    this.isLoading = true;
+    this.error = null;
+    
+    this.inventoryService.getStockLevels(this.genreId || undefined)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          this.chartData = data;
+          this.updateChart();
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.error = 'Failed to load stock levels. Please try again later.';
+          this.isLoading = false;
+          console.error('Error loading stock levels:', err);
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
+  private initChart(): void {
+    if (this.chart) {
+      this.chart.dispose();
+    }
+    
+    if (!this.chartContainer?.nativeElement) {
+      console.error('Chart container not found');
+      return;
+    }
+    
+    this.chart = echarts.init(this.chartContainer.nativeElement);
+    this.updateChart();
+  }
+
+  private updateChart(): void {
+    if (!this.chart) {
+      this.initChart();
+      return;
+    }
+    
+    if (!this.chartData) {
+      return;
+    }
+    
+    try {
+      const options = this.getChartOption();
+      this.chart.setOption(options, true);
+      
+      // Force resize to ensure proper rendering
+      setTimeout(() => {
+        this.chart?.resize();
+      }, 0);
+    } catch (error) {
+      console.error('Error updating chart:', error);
+      this.error = 'Failed to update chart. Please try again.';
+      this.cdr.detectChanges();
+    }
+  }
+
+  private destroyChart(): void {
+    if (this.chart) {
+      this.chart.dispose();
+      this.chart = null;
+    }
+  }
+
+  changeChartType(type: ChartType): void {
+    if (this.chartType === type) return;
+    
+    this.chartType = type;
+    this.updateChart();
+  }
+
+  onGenreChange(genreId: string | null): void {
+    if (this.genreId === genreId) return;
+    
+    this.genreId = genreId;
+    this.loadData();
+  }
+
+  private getChartOption(): echarts.EChartsOption {
+    if (!this.chartData) {
+      return {};
+    }
+    
+    const { stats } = this.chartData;
+    const chartType = this.chartType;
+    
+    const seriesData: SeriesDataItem[] = [
+      { 
+        name: 'In Stock', 
+        value: stats.inStockCount, 
+        itemStyle: { color: this.COLORS.inStock }
+      },
+      { 
+        name: 'Low Stock', 
+        value: stats.lowStockCount, 
+        itemStyle: { color: this.COLORS.lowStock }
+      },
+      { 
+        name: 'Out of Stock', 
+        value: stats.outOfStockCount, 
+        itemStyle: { color: this.COLORS.outOfStock }
+      }
+    ];
+    
+    const baseOptions: echarts.EChartsOption = {
+      backgroundColor: 'transparent',
+      animation: true,
+      tooltip: {
+        trigger: 'item',
+        formatter: (params: any) => {
+          const { name, value, color } = params;
+          return `
+            <div class="p-2">
+              <div class="font-medium text-gray-800">${name}</div>
+              <div class="flex items-center mt-1">
+                <span class="inline-block w-3 h-3 rounded-full mr-2" style="background-color: ${color};"></span>
+                <span>${value} items</span>
+              </div>
+            </div>
+          `;
+        }
+      },
+      legend: {
+        show: chartType !== 'pie',
+        bottom: 10,
+        data: seriesData.map(item => item.name)
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '15%',
+        containLabel: true
+      },
+      series: []
+    };
+
+    switch (chartType) {
+      case 'pie':
+        return {
+          ...baseOptions,
+          series: [{
+            type: 'pie',
+            radius: ['40%', '70%'],
+            avoidLabelOverlap: false,
+            itemStyle: {
+              borderRadius: 6,
+              borderColor: '#fff',
+              borderWidth: 2,
+              color: (params: any) => {
+                const data = seriesData[params.dataIndex];
+                return data?.itemStyle?.color || '#000';
+              }
+            },
+            label: {
+              show: false,
+              position: 'center'
+            },
+            emphasis: {
+              label: {
+                show: true,
+                fontSize: '18',
+                fontWeight: 'bold'
+              }
+            },
+            data: seriesData
+          }]
+        };
+
+      case 'bar':
+        return {
+          ...baseOptions,
+          xAxis: {
+            type: 'category',
+            data: seriesData.map(item => item.name)
+          },
+          yAxis: {
+            type: 'value'
+          },
+          series: [{
+            type: 'bar',
+            data: seriesData.map(item => ({
+              value: item.value,
+              itemStyle: { color: item.itemStyle.color }
+            })),
+            barWidth: '40%',
+            showBackground: true,
+            backgroundStyle: {
+              color: 'rgba(180, 180, 180, 0.2)'
+            }
+          }]
+        };
+
+      case 'line':
+      default:
+        return {
+          ...baseOptions,
+          xAxis: {
+            type: 'category',
+            data: seriesData.map(item => item.name)
+          },
+          yAxis: {
+            type: 'value'
+          },
+          series: [{
+            type: 'line',
+            data: seriesData.map(item => ({
+              value: item.value,
+              itemStyle: { color: item.itemStyle.color }
+            })),
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 10,
+            lineStyle: {
+              width: 3,
+              type: 'solid' as const
+            },
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: 'rgba(58, 77, 233, 0.8)' },
+                { offset: 1, color: 'rgba(58, 77, 233, 0.1)' }
+              ])
+            }
+          }]
+        };
+    }
+  }
+}

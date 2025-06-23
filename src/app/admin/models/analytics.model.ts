@@ -49,3 +49,31 @@ export interface PriceUpdateEvent {
     sellingPrice?: number;
   };
 }
+
+export interface StockLevelProduct {
+  id: number;
+  title: string;
+  currentStock: number;
+  status: 'in-stock' | 'low-stock' | 'out-of-stock';
+  genreId?: number;
+  genreName?: string;
+}
+
+export interface StockLevelStats {
+  totalStock: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  inStockCount: number;
+  totalProducts: number;
+}
+
+export interface StockLevelData {
+  products: StockLevelProduct[];
+  stats: StockLevelStats;
+}
+
+export interface StockLevelUpdate {
+  timestamp: string;
+  stockLevels: StockLevelData;
+  genreId?: number; // Optional, used for filtering updates by genre
+}

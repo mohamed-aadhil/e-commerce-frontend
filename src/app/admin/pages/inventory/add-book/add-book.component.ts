@@ -512,7 +512,7 @@ export class AddBookComponent implements OnInit {
   }
 
   onCancel() {
-    this.router.navigate(['/admin']);
+    this.router.navigate(['/admin/inventory']);
   }
 
   onReset(form: any) {

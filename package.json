@@ -22,6 +22,7 @@
     "@types/socket.io-client": "^1.4.36",
     "chart.js": "^4.5.0",
     "chartjs-plugin-datalabels": "^2.2.0",
+    "echarts": "^5.6.0",
     "highcharts": "^12.2.0",
     "highcharts-more": "^0.1.7",
     "jwt-decode": "^4.0.0",
