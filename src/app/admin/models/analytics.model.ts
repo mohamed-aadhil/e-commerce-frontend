@@ -39,6 +39,7 @@ export interface GenreDataUpdate {
 export interface PriceDataUpdate {
   genreId: number;
   timestamp: string;
+  priceAnalysis: PriceAnalysisData;
 }
 
 export interface PriceUpdateEvent {

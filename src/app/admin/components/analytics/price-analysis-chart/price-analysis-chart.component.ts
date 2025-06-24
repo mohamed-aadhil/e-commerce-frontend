@@ -773,6 +773,42 @@ export class PriceAnalysisChartComponent implements OnInit, AfterViewInit, OnDes
   }
 
   /**
+   * Set up WebSocket connection for real-time updates
+   */
+  private setupWebSocket(): void {
+    this.webSocketService.getPriceUpdates()
+      .pipe(
+        filter((update): update is PriceDataUpdate => 
+          update !== null && update.genreId === (this.selectedGenreId || 0)
+        ),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (update) => {
+          if (update.priceAnalysis) {
+            // Update the chart with the new data directly from the WebSocket
+            this.chartData = update.priceAnalysis;
+            this.updateChartData();
+            
+            // Show a brief notification to the user
+            this.showSuccess('Chart updated with latest data');
+            
+            // Trigger change detection
+            this.cdr.detectChanges();
+          } else {
+            // Fallback to fetching fresh data if the update is missing priceAnalysis
+            console.warn('Received price update without priceAnalysis, falling back to full refresh');
+            this.loadChartData();
+          }
+        },
+        error: (error: Error) => {
+          console.error('WebSocket error:', error);
+          this.showError('Connection to real-time updates lost. Chart updates may be delayed.');
+        }
+      });
+  }
+
+  /**
    * Waits for the chart container to be available in the DOM
    */
   private async waitForContainer(maxRetries = 10, delay = 100): Promise<boolean> {
@@ -1044,24 +1080,27 @@ export class PriceAnalysisChartComponent implements OnInit, AfterViewInit, OnDes
   }
 
   /**
-   * Set up WebSocket connection for real-time updates
+   * Update the chart with new data
    */
-  private setupWebSocket(): void {
-    this.webSocketService.getPriceUpdates()
-      .pipe(
-        filter(update => update !== null && update.genreId === this.selectedGenreId),
-        takeUntil(this.destroy$)
-      )
-      .subscribe({
-        next: () => {
-          // When we get a price update for the current genre, refresh the chart data
-          this.loadChartData();
-        },
-        error: (error: Error) => {
-          console.error('WebSocket error:', error);
-          this.showError('Connection to real-time updates lost. Please refresh the page.');
+  private updateChart(): void {
+    if (!this.chart) {
+      this.initializeChart();
+      return;
+    }
+
+    const seriesData = this.getChartData();
+    
+    this.chart.update({
+      series: [{
+        type: this.chartType,
+        data: seriesData,
+        name: 'Products',
+        tooltip: {
+          useHTML: true,
+          formatter: this.getTooltipFormatter()
         }
-      });
+      }]
+    } as Highcharts.Options, true, true);
   }
 
   /**
@@ -1158,29 +1197,5 @@ export class PriceAnalysisChartComponent implements OnInit, AfterViewInit, OnDes
       horizontalPosition: 'center',
       verticalPosition: 'top'
     });
-  }
-
-  /**
-   * Update the chart with new data
-   */
-  private updateChart(): void {
-    if (!this.chart) {
-      this.initializeChart();
-      return;
-    }
-
-    const seriesData = this.getChartData();
-    
-    this.chart.update({
-      series: [{
-        type: this.chartType,
-        data: seriesData,
-        name: 'Products',
-        tooltip: {
-          useHTML: true,
-          formatter: this.getTooltipFormatter()
-        }
-      }]
-    } as Highcharts.Options, true, true);
   }
 }
