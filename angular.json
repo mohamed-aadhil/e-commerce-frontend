@@ -26,15 +26,32 @@
             ],
             "styles": [
               "src/styles.css"
-            ],
-            "fileReplacements": [
-              {
-                "replace": "src/environments/environment.ts",
-                "with": "src/environments/environment.prod.ts"
-              }
             ]
           },
           "configurations": {
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.ts"
+                }
+              ]
+            },
+            "staging": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.staging.ts"
+                }
+              ],
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": true,
+              "extractLicenses": true
+            },
             "production": {
               "fileReplacements": [
                 {
@@ -58,17 +75,6 @@
                   "maximumError": "8kB"
                 }
               ]
-            },
-            "development": {
-              "optimization": false,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.ts"
-                }
-              ]
             }
           },
           "defaultConfiguration": "production"
@@ -76,11 +82,14 @@
         "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
-            "production": {
-              "buildTarget": "frontend-app:build:production"
-            },
             "development": {
               "buildTarget": "frontend-app:build:development"
+            },
+            "staging": {
+              "buildTarget": "frontend-app:build:staging"
+            },
+            "production": {
+              "buildTarget": "frontend-app:build:production"
             }
           },
           "defaultConfiguration": "development"
