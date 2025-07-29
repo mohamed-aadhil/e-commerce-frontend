@@ -4,9 +4,15 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "start:dev": "ng serve -c=development",
+    "start:staging": "ng serve -c=staging",
+    "start:prod": "ng serve -c=production",
     "build": "ng build",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "build:dev": "ng build -c=development",
+    "build:staging": "ng build -c=staging",
+    "build:prod": "ng build -c=production",
+    "test": "ng test",
+    "watch": "ng build --watch --configuration development"
   },
   "private": true,
   "dependencies": {
@@ -18,6 +24,7 @@
     "@angular/forms": "^20.0.0",
     "@angular/material": "^20.0.2",
     "@angular/platform-browser": "^20.0.0",
+    "@angular/platform-browser-dynamic": "^20.0.0",
     "@angular/router": "^20.0.0",
     "@types/socket.io-client": "^1.4.36",
     "chart.js": "^4.5.0",
