@@ -1,54 +1,54 @@
 <app-shared-header></app-shared-header>
-<div class="w-full flex flex-col items-center justify-center py-12 bg-gradient-to-r from-primary-light to-secondary-light shadow-lg">
-  <div class="relative w-full max-w-3xl mx-auto">
+<div class="w-full flex flex-col items-center justify-center py-8 sm:py-12 bg-gradient-to-r from-primary-light to-secondary-light shadow-lg">
+  <div class="relative w-full max-w-xl sm:max-w-3xl mx-auto">
     <!-- Slides -->
     <div *ngFor="let quote of quotes; let i = index" [class.hidden]="i !== current" class="transition-all duration-700 ease-in-out">
-      <div class="flex flex-col items-center text-center px-8 py-16">
-        <svg class="w-14 h-14 text-secondary mb-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <div class="flex flex-col items-center text-center px-4 sm:px-8 py-8 sm:py-16">
+        <svg class="w-10 h-10 sm:w-14 sm:h-14 text-secondary mb-2 sm:mb-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M9 7h6M9 11h6M9 15h3" />
         </svg>
-        <p class="text-3xl font-semibold text-accent-dark mb-4 italic">“{{ quote.text }}”</p>
-        <span class="text-accent text-lg font-medium">~ {{ quote.author }}</span>
+        <p class="text-xl sm:text-3xl font-semibold text-accent-dark mb-2 sm:mb-4 italic">“{{ quote.text }}”</p>
+        <span class="text-sm sm:text-lg text-accent font-medium">~ {{ quote.author }}</span>
       </div>
     </div>
     <!-- Left/Right Arrows -->
-    <button (click)="prev()" class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-primary text-primary-dark rounded-full p-3 shadow transition">
-      <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <button (click)="prev()" class="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-primary text-primary-dark rounded-full p-2 sm:p-3 shadow transition">
+      <svg class="w-5 h-5 sm:w-7 sm:h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path d="M15 19l-7-7 7-7" />
       </svg>
     </button>
-    <button (click)="next()" class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-primary text-primary-dark rounded-full p-3 shadow transition">
-      <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <button (click)="next()" class="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-primary text-primary-dark rounded-full p-2 sm:p-3 shadow transition">
+      <svg class="w-5 h-5 sm:w-7 sm:h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path d="M9 5l7 7-7 7" />
       </svg>
     </button>
     <!-- Dots -->
-    <div class="flex justify-center mt-6 gap-2">
+    <div class="flex justify-center mt-4 sm:mt-6 gap-1 sm:gap-2">
       <button *ngFor="let quote of quotes; let i = index"
         (click)="goTo(i)"
         [class.bg-secondary]="current === i"
-        class="w-3 h-3 rounded-full bg-accent-light border-2 border-secondary transition"></button>
+        class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-accent-light border-2 border-secondary transition"></button>
     </div>
   </div>
 </div>
 <!-- Shop by Genres -->
-<div class="w-full max-w-5xl mx-auto mt-12">
-  <h2 class="text-2xl font-bold text-primary mb-6">Shop by Genres</h2>
-  <div *ngIf="loadingGenres" class="text-center py-8 text-slate-500">Loading genres...</div>
-  <div *ngIf="genreError" class="text-center py-8 text-red-500">Failed to load genres. Please try again later.</div>
-  <div *ngIf="!loadingGenres && !genreError && genres.length === 0" class="text-center py-8 text-slate-400">No data found.</div>
-  <div *ngIf="!loadingGenres && !genreError && genres.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+<div class="w-full max-w-xl sm:max-w-5xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0">
+  <h2 class="text-xl sm:text-2xl font-bold text-primary mb-4 sm:mb-6">Shop by Genres</h2>
+  <div *ngIf="loadingGenres" class="text-center py-4 sm:py-8 text-slate-500">Loading genres...</div>
+  <div *ngIf="genreError" class="text-center py-4 sm:py-8 text-red-500">Failed to load genres. Please try again later.</div>
+  <div *ngIf="!loadingGenres && !genreError && genres.length === 0" class="text-center py-4 sm:py-8 text-slate-400">No data found.</div>
+  <div *ngIf="!loadingGenres && !genreError && genres.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-6">
     <app-genre-card *ngFor="let genre of genres" [genre]="genre" (select)="onGenreSelect($event)"></app-genre-card>
   </div>
 </div>
 
 <!-- Shop by Audiences -->
-<div class="w-full max-w-5xl mx-auto mt-12">
-  <h2 class="text-2xl font-bold text-primary mb-6">Shop by Audiences</h2>
-  <div *ngIf="loadingAudiences" class="text-center py-8 text-slate-500">Loading audiences...</div>
-  <div *ngIf="audienceError" class="text-center py-8 text-red-500">Failed to load audiences. Please try again later.</div>
-  <div *ngIf="!loadingAudiences && !audienceError && audiences.length === 0" class="text-center py-8 text-slate-400">No audiences found.</div>
-  <div *ngIf="!loadingAudiences && !audienceError && audiences.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+<div class="w-full max-w-xl sm:max-w-5xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0">
+  <h2 class="text-xl sm:text-2xl font-bold text-primary mb-4 sm:mb-6">Shop by Audiences</h2>
+  <div *ngIf="loadingAudiences" class="text-center py-4 sm:py-8 text-slate-500">Loading audiences...</div>
+  <div *ngIf="audienceError" class="text-center py-4 sm:py-8 text-red-500">Failed to load audiences. Please try again later.</div>
+  <div *ngIf="!loadingAudiences && !audienceError && audiences.length === 0" class="text-center py-4 sm:py-8 text-slate-400">No audiences found.</div>
+  <div *ngIf="!loadingAudiences && !audienceError && audiences.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-6">
     <app-audience-card *ngFor="let audience of audiences" [audience]="audience" (select)="onAudienceSelect($event)"></app-audience-card>
   </div>
 </div>

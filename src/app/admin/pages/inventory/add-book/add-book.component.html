@@ -1,29 +1,29 @@
-<div class="p-4 sm:p-8 max-w-3xl mx-auto bg-white rounded-lg shadow-lg mt-8">
-  <h1 class="text-3xl font-bold mb-8 text-blue-700">{{ isEditMode ? 'Edit Book' : 'Add Book' }}</h1>
+<div class="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto bg-white rounded-lg shadow-lg mt-4 sm:mt-8">
+  <h1 class="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-primary-dark">{{ isEditMode ? 'Edit Book' : 'Add Book' }}</h1>
   <form #addBookForm="ngForm" (ngSubmit)="onSubmit(addBookForm)">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 sm:gap-y-6">
       <!-- Left Column -->
-      <div class="flex flex-col gap-6">
+      <div class="flex flex-col gap-4 sm:gap-6">
         <!-- Title -->
         <div>
-          <label class="block font-medium mb-2 text-lg">Title <span class="text-red-500">*</span></label>
-          <input type="text" class="border rounded px-4 py-2 w-full focus:ring-2 focus:ring-blue-200" [(ngModel)]="title" name="title" required />
+          <label class="block font-medium mb-1 sm:mb-2 text-base sm:text-lg text-slate-700">Title <span class="text-red-500">*</span></label>
+          <input type="text" class="border border-slate-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-primary-light focus:border-primary-light text-base" [(ngModel)]="title" name="title" required />
         </div>
         <!-- Author -->
         <div>
-          <label class="block font-medium mb-2 text-lg">Author <span class="text-red-500">*</span></label>
-          <input type="text" class="border rounded px-4 py-2 w-full focus:ring-2 focus:ring-blue-200" [(ngModel)]="author" name="author" required />
+          <label class="block font-medium mb-1 sm:mb-2 text-base sm:text-lg text-slate-700">Author <span class="text-red-500">*</span></label>
+          <input type="text" class="border border-slate-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-primary-light focus:border-primary-light text-base" [(ngModel)]="author" name="author" required />
         </div>
         <!-- Selling Price -->
         <div>
-          <label class="block font-medium mb-2 text-lg">Selling Price <span class="text-red-500">*</span></label>
-          <input type="number" class="border rounded px-4 py-2 w-full focus:ring-2 focus:ring-blue-200" 
+          <label class="block font-medium mb-1 sm:mb-2 text-base sm:text-lg text-slate-700">Selling Price <span class="text-red-500">*</span></label>
+          <input type="number" class="border border-slate-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-primary-light focus:border-primary-light text-base" 
                  [(ngModel)]="sellingPrice" name="sellingPrice" min="0" step="0.01" required />
         </div>
         <!-- Cost Price -->
         <div>
-          <label class="block font-medium mb-2 text-lg">Cost Price <span class="text-red-500">*</span></label>
-          <input type="number" class="border rounded px-4 py-2 w-full focus:ring-2 focus:ring-blue-200" 
+          <label class="block font-medium mb-1 sm:mb-2 text-base sm:text-lg text-slate-700">Cost Price <span class="text-red-500">*</span></label>
+          <input type="number" class="border border-slate-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-primary-light focus:border-primary-light text-base" 
                  [(ngModel)]="costPrice" name="costPrice" min="0" step="0.01" required />
           <div *ngIf="isSellingPriceLessThanCostPrice()" 
                class="text-red-500 text-sm mt-1">
@@ -32,92 +32,92 @@
         </div>
         <!-- Description -->
         <div class="md:col-span-2">
-          <label class="block font-medium mb-2 text-lg">Description</label>
-          <textarea class="border rounded px-4 py-2 w-full focus:ring-2 focus:ring-blue-200 h-32" 
+          <label class="block font-medium mb-1 sm:mb-2 text-base sm:text-lg text-slate-700">Description</label>
+          <textarea class="border border-slate-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-primary-light focus:border-primary-light h-24 sm:h-32 text-base" 
                     [(ngModel)]="description" name="description"></textarea>
         </div>
         <!-- Product Type -->
         <div>
-          <label class="block font-medium mb-2 text-lg">Product Type <span class="text-red-500">*</span></label>
-          <select class="border rounded px-4 py-2 w-full focus:ring-2 focus:ring-blue-200" [(ngModel)]="productType" name="productType" required>
+          <label class="block font-medium mb-1 sm:mb-2 text-base sm:text-lg text-slate-700">Product Type <span class="text-red-500">*</span></label>
+          <select class="border border-slate-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-primary-light focus:border-primary-light text-base" [(ngModel)]="productType" name="productType" required>
             <option value="New Book">New Book</option>
             <!-- Future: <option value="Used Book">Used Book</option> <option value="ebook">Ebook</option> -->
           </select>
         </div>
         <!-- Images -->
         <div>
-          <label class="block font-medium mb-2 text-lg">Images</label>
-          <div *ngFor="let img of images; let i = index" class="flex items-center gap-2 mb-2">
-            <input type="text" class="border rounded px-4 py-2 flex-1 focus:ring-2 focus:ring-blue-200" [(ngModel)]="images[i]" [name]="'image' + i" placeholder="Image URL" />
-            <button type="button" (click)="removeImageField(i)" class="text-red-500 px-2 hover:underline" [disabled]="images.length === 1">Remove</button>
+          <label class="block font-medium mb-1 sm:mb-2 text-base sm:text-lg text-slate-700">Images</label>
+          <div *ngFor="let img of images; let i = index" class="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2">
+            <input type="text" class="border border-slate-300 rounded px-3 py-2 flex-1 w-full focus:ring-2 focus:ring-primary-light focus:border-primary-light text-base" [(ngModel)]="images[i]" [name]="'image' + i" placeholder="Image URL" />
+            <button type="button" (click)="removeImageField(i)" class="text-red-500 px-2 py-1 hover:underline text-sm" [disabled]="images.length === 1">Remove</button>
           </div>
-          <button type="button" (click)="addImageField()" class="text-blue-600 text-sm hover:underline">+ Add Image</button>
+          <button type="button" (click)="addImageField()" class="text-primary text-sm hover:underline">+ Add Image</button>
         </div>
       </div>
       <!-- Right Column -->
-      <div class="flex flex-col gap-6">
+      <div class="flex flex-col gap-4 sm:gap-6">
         <!-- Genres -->
         <div>
-          <label class="block font-medium mb-2 text-lg">Genres <span class="text-red-500">*</span></label>
-          <div class="flex flex-row flex-wrap gap-2 items-end">
-            <mat-form-field appearance="outline" class="flex-1 min-w-[140px]">
+          <label class="block font-medium mb-1 sm:mb-2 text-base sm:text-lg text-slate-700">Genres <span class="text-red-500">*</span></label>
+          <div class="flex flex-col sm:flex-row flex-wrap gap-2 sm:items-end">
+            <mat-form-field appearance="outline" class="flex-1 w-full sm:min-w-[140px]">
               <mat-select [(ngModel)]="genreIds" name="genreIds" multiple required placeholder="Select genres">
                 <mat-option *ngFor="let genre of genres" [value]="genre.id">{{ genre.name }}</mat-option>
               </mat-select>
             </mat-form-field>
-            <mat-form-field appearance="outline" class="w-28 mb-0">
-              <input matInput [(ngModel)]="newGenreName" [name]="'newGenreName'" placeholder="Add genre..." (keyup.enter)="addGenreInline()" style="height: 40px;" />
+            <mat-form-field appearance="outline" class="w-full sm:w-28 mb-0">
+              <input matInput [(ngModel)]="newGenreName" [name]="'newGenreName'" placeholder="Add genre..." (keyup.enter)="addGenreInline()" class="h-[40px] text-base" />
             </mat-form-field>
-            <button mat-raised-button color="primary" type="button" (click)="addGenreInline()" [disabled]="addingGenre || !newGenreName.trim()" style="height: 40px; min-width: 40px;">+ Add</button>
+            <button mat-raised-button color="primary" type="button" (click)="addGenreInline()" [disabled]="addingGenre || !newGenreName.trim()" class="h-[40px] min-w-[40px] bg-primary text-white hover:bg-primary-dark transition text-sm sm:text-base">+ Add</button>
           </div>
-          <div *ngIf="loadingGenres" class="text-xs text-slate-400">Loading genres...</div>
-          <div *ngIf="errorGenres" class="text-xs text-red-500">Failed to load genres.</div>
+          <div *ngIf="loadingGenres" class="text-xs text-slate-400 mt-1">Loading genres...</div>
+          <div *ngIf="errorGenres" class="text-xs text-red-500 mt-1">Failed to load genres.</div>
         </div>
         <!-- Audiences -->
         <div>
-          <label class="block font-medium mb-2 text-lg">Audiences <span class="text-red-500">*</span></label>
-          <div class="flex flex-row flex-wrap gap-2 items-end">
-            <mat-form-field appearance="outline" class="flex-1 min-w-[140px]">
+          <label class="block font-medium mb-1 sm:mb-2 text-base sm:text-lg text-slate-700">Audiences <span class="text-red-500">*</span></label>
+          <div class="flex flex-col sm:flex-row flex-wrap gap-2 sm:items-end">
+            <mat-form-field appearance="outline" class="flex-1 w-full sm:min-w-[140px]">
               <mat-select [(ngModel)]="audienceIds" name="audienceIds" multiple required placeholder="Select audiences">
                 <mat-option *ngFor="let audience of audiences" [value]="audience.id">{{ audience.name }}</mat-option>
               </mat-select>
             </mat-form-field>
-            <mat-form-field appearance="outline" class="w-28 mb-0">
-              <input matInput [(ngModel)]="newAudienceName" [name]="'newAudienceName'" placeholder="Add audience..." (keyup.enter)="addAudienceInline()" style="height: 40px;" />
+            <mat-form-field appearance="outline" class="w-full sm:w-28 mb-0">
+              <input matInput [(ngModel)]="newAudienceName" [name]="'newAudienceName'" placeholder="Add audience..." (keyup.enter)="addAudienceInline()" class="h-[40px] text-base" />
             </mat-form-field>
-            <button mat-raised-button color="primary" type="button" (click)="addAudienceInline()" [disabled]="addingAudience || !newAudienceName.trim()" style="height: 40px; min-width: 40px;">+ Add</button>
+            <button mat-raised-button color="primary" type="button" (click)="addAudienceInline()" [disabled]="addingAudience || !newAudienceName.trim()" class="h-[40px] min-w-[40px] bg-primary text-white hover:bg-primary-dark transition text-sm sm:text-base">+ Add</button>
           </div>
-          <div *ngIf="loadingAudiences" class="text-xs text-slate-400">Loading audiences...</div>
-          <div *ngIf="errorAudiences" class="text-xs text-red-500">Failed to load audiences.</div>
+          <div *ngIf="loadingAudiences" class="text-xs text-slate-400 mt-1">Loading audiences...</div>
+          <div *ngIf="errorAudiences" class="text-xs text-red-500 mt-1">Failed to load audiences.</div>
         </div>
         <!-- Initial Stock (only in add mode) -->
         <div *ngIf="!isEditMode">
-          <label class="block font-medium mb-2 text-lg">Initial Stock <span class="text-red-500">*</span></label>
-          <input type="number" class="border rounded px-4 py-2 w-full focus:ring-2 focus:ring-blue-200" [(ngModel)]="initialStock" name="initialStock" min="0" required />
+          <label class="block font-medium mb-1 sm:mb-2 text-base sm:text-lg text-slate-700">Initial Stock <span class="text-red-500">*</span></label>
+          <input type="number" class="border border-slate-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-primary-light focus:border-primary-light text-base" [(ngModel)]="initialStock" name="initialStock" min="0" required />
         </div>
         <!-- Metadata -->
         <div>
-          <label class="block font-medium mb-2 text-lg">Metadata</label>
-          <div *ngFor="let meta of metadata; let i = index" class="flex items-center gap-2 mb-2">
-            <input type="text" class="border rounded px-2 py-2 w-32 focus:ring-2 focus:ring-blue-200" [(ngModel)]="metadata[i].key" [name]="'metaKey' + i" placeholder="Key" />
-            <input type="text" class="border rounded px-2 py-2 w-32 focus:ring-2 focus:ring-blue-200" [(ngModel)]="metadata[i].value" [name]="'metaValue' + i" placeholder="Value" />
-            <button type="button" (click)="removeMetadataField(i)" class="text-red-500 px-2 hover:underline">Remove</button>
+          <label class="block font-medium mb-1 sm:mb-2 text-base sm:text-lg text-slate-700">Metadata</label>
+          <div *ngFor="let meta of metadata; let i = index" class="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2">
+            <input type="text" class="border border-slate-300 rounded px-2 py-2 w-full sm:w-32 focus:ring-2 focus:ring-primary-light focus:border-primary-light text-base" [(ngModel)]="metadata[i].key" [name]="'metaKey' + i" placeholder="Key" />
+            <input type="text" class="border border-slate-300 rounded px-2 py-2 w-full sm:w-32 focus:ring-2 focus:ring-primary-light focus:border-primary-light text-base" [(ngModel)]="metadata[i].value" [name]="'metaValue' + i" placeholder="Value" />
+            <button type="button" (click)="removeMetadataField(i)" class="text-red-500 px-2 py-1 hover:underline text-sm">Remove</button>
           </div>
-          <button type="button" (click)="addMetadataField()" class="text-blue-600 text-sm hover:underline">+ Add Metadata</button>
+          <button type="button" (click)="addMetadataField()" class="text-primary text-sm hover:underline">+ Add Metadata</button>
         </div>
       </div>
     </div>
     <!-- Feedback and Actions -->
-    <div class="flex flex-col md:flex-row gap-4 mt-10 justify-end items-center">
-      <div class="flex-1">
-        <div *ngIf="submitError" class="mb-2 text-red-600">{{ submitError }}</div>
-        <div *ngIf="submitSuccess" class="mb-2 text-green-600">{{ isEditMode ? 'Book updated successfully!' : 'Book added successfully!' }}</div>
-        <div *ngIf="submitting" class="mb-2 text-blue-600">Submitting...</div>
+    <div class="flex flex-col sm:flex-row gap-4 mt-6 sm:mt-10 justify-end items-center">
+      <div class="flex-1 text-center sm:text-left">
+        <div *ngIf="submitError" class="mb-1 text-red-600 text-sm">{{ submitError }}</div>
+        <div *ngIf="submitSuccess" class="mb-1 text-green-600 text-sm">{{ isEditMode ? 'Book updated successfully!' : 'Book added successfully!' }}</div>
+        <div *ngIf="submitting" class="mb-1 text-primary-dark text-sm">Submitting...</div>
       </div>
-      <div class="flex gap-4">
-        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition" [disabled]="submitting">{{ isEditMode ? 'Update Book' : 'Add Book' }}</button>
-        <button type="button" class="bg-slate-200 text-slate-700 px-6 py-2 rounded hover:bg-slate-300 transition" (click)="onCancel()">Cancel</button>
-        <button type="button" class="bg-gray-100 text-gray-700 px-6 py-2 rounded hover:bg-gray-200 transition" (click)="onReset(addBookForm)">Reset</button>
+      <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
+        <button type="submit" class="bg-primary text-white px-6 py-2 rounded hover:bg-primary-dark transition text-base font-semibold" [disabled]="submitting">{{ isEditMode ? 'Update Book' : 'Add Book' }}</button>
+        <button type="button" class="bg-slate-200 text-slate-700 px-6 py-2 rounded hover:bg-slate-300 transition text-base font-semibold" (click)="onCancel()">Cancel</button>
+        <button type="button" class="bg-gray-100 text-gray-700 px-6 py-2 rounded hover:bg-gray-200 transition text-base font-semibold" (click)="onReset(addBookForm)">Reset</button>
       </div>
     </div>
   </form>

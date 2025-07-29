@@ -1,19 +1,19 @@
 <div class="flex flex-col h-full bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
   <!-- Header -->
-  <div class="flex items-center justify-between p-4 border-b border-gray-100">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-gray-100 gap-3">
     <div>
       <h3 class="text-lg font-medium text-gray-900">Stock Levels</h3>
-      <p class="text-sm text-gray-500" *ngIf="!isLoading && !error">
+      <p class="text-xs text-gray-500" *ngIf="!isLoading && !error">
         Last updated: {{ lastUpdated | date:'medium' }}
       </p>
     </div>
     
-    <div class="flex items-center space-x-2">
+    <div class="flex flex-wrap items-center gap-2 sm:space-x-2 sm:gap-0">
       <!-- Genre Selector -->
       <div class="relative" [matMenuTriggerFor]="genreMenu" #genreTrigger="matMenuTrigger">
-        <button mat-stroked-button class="!text-sm !font-medium !border-gray-200 !text-gray-700">
+        <button mat-stroked-button class="!text-sm !font-medium !border-gray-200 !text-gray-700 !px-3 !py-1.5">
           <mat-icon class="text-gray-500 mr-1" style="font-size: 18px;">category</mat-icon>
-          {{ selectedGenreName }}
+          <span class="truncate max-w-[120px] inline-block">{{ selectedGenreName }}</span>
           <mat-icon class="ml-1" style="font-size: 18px;">arrow_drop_down</mat-icon>
         </button>
         
@@ -80,15 +80,15 @@
   <!-- Chart Container -->
   <div *ngIf="!isLoading && !error" class="flex-1 flex flex-col p-4 h-full">
     <!-- Stats Summary -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
       <!-- In Stock -->
       <div class="bg-green-50 rounded-lg p-4 border border-green-100">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-xs font-medium text-green-700 mb-1">In Stock</p>
-            <p class="text-2xl font-bold text-green-900">{{ chartData?.stats?.inStockCount || 0 | number }}</p>
+            <p class="text-xl sm:text-2xl font-bold text-green-900">{{ chartData?.stats?.inStockCount || 0 | number }}</p>
           </div>
-          <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-green-100 flex items-center justify-center">
             <mat-icon class="text-green-600 !w-5 !h-5">check_circle</mat-icon>
           </div>
         </div>
@@ -100,9 +100,9 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-xs font-medium text-amber-700 mb-1">Low Stock</p>
-            <p class="text-2xl font-bold text-amber-900">{{ chartData?.stats?.lowStockCount || 0 | number }}</p>
+            <p class="text-xl sm:text-2xl font-bold text-amber-900">{{ chartData?.stats?.lowStockCount || 0 | number }}</p>
           </div>
-          <div class="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-amber-100 flex items-center justify-center">
             <mat-icon class="text-amber-600 !w-5 !h-5">warning</mat-icon>
           </div>
         </div>
@@ -114,9 +114,9 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-xs font-medium text-red-700 mb-1">Out of Stock</p>
-            <p class="text-2xl font-bold text-red-900">{{ chartData?.stats?.outOfStockCount || 0 | number }}</p>
+            <p class="text-xl sm:text-2xl font-bold text-red-900">{{ chartData?.stats?.outOfStockCount || 0 | number }}</p>
           </div>
-          <div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-red-100 flex items-center justify-center">
             <mat-icon class="text-red-600 !w-5 !h-5">cancel</mat-icon>
           </div>
         </div>
@@ -125,12 +125,12 @@
     </div>
     
     <!-- Chart -->
-    <div class="flex-1 min-h-[400px] w-full relative">
+    <div class="flex-1 min-h-[300px] sm:min-h-[400px] w-full relative">
       <div #chartContainer class="absolute inset-0 w-full h-full"></div>
     </div>
     
     <!-- Legend -->
-    <div class="flex flex-wrap items-center justify-center gap-4 mt-4 text-sm">
+    <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mt-4 text-xs sm:text-sm">
       <div class="flex items-center">
         <span class="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
         <span>In Stock</span>
@@ -147,13 +147,13 @@
   </div>
   
   <!-- Footer -->
-  <div class="px-4 py-2 bg-gray-50 border-t border-gray-100 text-xs text-gray-500 flex justify-between items-center">
+  <div class="px-4 py-2 bg-gray-50 border-t border-gray-100 text-xs text-gray-500 flex flex-col sm:flex-row justify-between items-center gap-1 sm:gap-0">
     <div>
-      <span class="hidden sm:inline">Total Products: </span>
+      <span class="hidden xs:inline">Total Products: </span>
       <span class="font-medium">{{ chartData?.stats?.totalProducts || 0 | number }}</span>
     </div>
     <div class="flex items-center">
-      <span class="hidden sm:inline mr-1">Updated:</span>
+      <span class="hidden xs:inline mr-1">Updated:</span>
       <span class="font-medium">{{ lastUpdated | date:'shortTime' }}</span>
     </div>
   </div>

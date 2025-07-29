@@ -6,6 +6,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { Router } from '@angular/router';
 
 export interface PaymentMethod {
   id: string;
@@ -41,7 +42,7 @@ export class PaymentMethodComponent {
   
   paymentForm: FormGroup;
   
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private router: Router) {
     this.paymentForm = this.fb.group({
       paymentMethod: ['', Validators.required]
     });

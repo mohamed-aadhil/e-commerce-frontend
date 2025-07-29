@@ -9,6 +9,7 @@ import { AuthService } from '../../../auth/auth.service';
 import { SharedFooter } from '../../../shared/footer/footer';
 import { LoginComponent } from '../../../auth/login/login.component';
 import { SignupComponent } from '../../../auth/signup/signup.component';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-home',
@@ -20,7 +21,8 @@ import { SignupComponent } from '../../../auth/signup/signup.component';
     SharedFooter, 
     RouterModule,
     LoginComponent,
-    SignupComponent
+    SignupComponent,
+    MatProgressSpinnerModule
   ],
   templateUrl: './home.html',
 })

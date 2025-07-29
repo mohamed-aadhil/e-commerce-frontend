@@ -75,47 +75,47 @@ import ChartDataLabels from 'chartjs-plugin-datalabels';
         </div>
         
         <!-- Stats Grid -->
-        <div class="grid grid-cols-3 gap-2 mt-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
           <!-- Total Products Card -->
-          <div class="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
+          <div class="bg-indigo-50 rounded-lg p-3 sm:p-4 border border-indigo-100">
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-xs font-medium text-indigo-700 mb-1">Total Products</p>
-                <p class="text-xl font-bold text-indigo-900">{{ totalBooks | number }}</p>
+                <p class="text-xl sm:text-2xl font-bold text-indigo-900">{{ totalBooks | number }}</p>
               </div>
-              <div class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-                <mat-icon class="text-indigo-600 !w-4 !h-4">book</mat-icon>
+              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+                <mat-icon class="text-indigo-600 !w-4 !h-4 sm:!w-5 sm:!h-5">book</mat-icon>
               </div>
             </div>
             <p class="text-xs text-indigo-500 mt-1">Across all genres</p>
           </div>
           
           <!-- Total Genres Card -->
-          <div class="bg-purple-50 rounded-lg p-3 border border-purple-100">
+          <div class="bg-purple-50 rounded-lg p-3 sm:p-4 border border-purple-100">
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-xs font-medium text-purple-700 mb-1">Total Genres</p>
-                <p class="text-xl font-bold text-purple-900">{{ totalGenres | number }}</p>
+                <p class="text-xl sm:text-2xl font-bold text-purple-900">{{ totalGenres | number }}</p>
               </div>
-              <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                <mat-icon class="text-purple-600 !w-4 !h-4">category</mat-icon>
+              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                <mat-icon class="text-purple-600 !w-4 !h-4 sm:!w-5 sm:!h-5">category</mat-icon>
               </div>
             </div>
             <p class="text-xs text-purple-500 mt-1">With available products</p>
           </div>
           
           <!-- Most Popular Genre Card -->
-          <div class="bg-pink-50 rounded-lg p-3 border border-pink-100">
+          <div class="bg-pink-50 rounded-lg p-3 sm:p-4 border border-pink-100">
             <div class="flex items-center justify-between">
               <div class="flex-1 min-w-0">
                 <p class="text-xs font-medium text-pink-700 mb-1">Most Popular</p>
-                <p class="text-sm font-bold text-pink-900 truncate" [matTooltip]="mostPopularGenre.name || 'N/A'">
+                <p class="text-sm sm:text-base font-bold text-pink-900 truncate" [matTooltip]="mostPopularGenre.name || 'N/A'">
                   {{ mostPopularGenre.name || 'N/A' }}
                 </p>
                 <p class="text-xs text-pink-600">{{ mostPopularGenre.bookCount | number }} books</p>
               </div>
-              <div class="w-8 h-8 rounded-lg bg-pink-100 flex items-center justify-center ml-2">
-                <mat-icon class="text-pink-600 !w-4 !h-4">star</mat-icon>
+              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-pink-100 flex items-center justify-center ml-2">
+                <mat-icon class="text-pink-600 !w-4 !h-4 sm:!w-5 sm:!h-5">star</mat-icon>
               </div>
             </div>
           </div>

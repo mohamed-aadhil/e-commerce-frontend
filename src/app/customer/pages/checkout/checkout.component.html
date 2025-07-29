@@ -1,45 +1,45 @@
-<div class="checkout-container">
-  <div class="checkout-header">
-    <h1>Checkout</h1>
-    <div class="checkout-steps">
-      <div class="step" [class.active]="currentStep === 0" [class.completed]="currentStep > 0">
-        <div class="step-number">1</div>
-        <div class="step-label">Shipping</div>
+<div class="container mx-auto px-4 py-8">
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-primary-dark mb-6 text-center">Checkout</h1>
+    <div class="flex flex-wrap justify-center items-center text-center gap-2 sm:gap-4">
+      <div class="flex flex-col items-center flex-1 min-w-[90px]" [class.text-primary-dark]="currentStep === 0" [class.text-slate-500]="currentStep !== 0" [class.font-semibold]="currentStep === 0">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-white mb-1" [class.bg-primary]="currentStep >= 0" [class.bg-slate-400]="currentStep < 0">1</div>
+        <div class="text-xs sm:text-sm">Shipping</div>
       </div>
-      <div class="step-connector"></div>
-      <div class="step" [class.active]="currentStep === 1" [class.completed]="currentStep > 1">
-        <div class="step-number">2</div>
-        <div class="step-label">Payment</div>
+      <div class="flex-grow border-t-2 border-slate-300 w-8 sm:w-16"></div>
+      <div class="flex flex-col items-center flex-1 min-w-[90px]" [class.text-primary-dark]="currentStep === 1" [class.text-slate-500]="currentStep !== 1" [class.font-semibold]="currentStep === 1">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-white mb-1" [class.bg-primary]="currentStep >= 1" [class.bg-slate-400]="currentStep < 1">2</div>
+        <div class="text-xs sm:text-sm">Payment</div>
       </div>
-      <div class="step-connector"></div>
-      <div class="step" [class.active]="currentStep === 2" [class.completed]="currentStep > 2">
-        <div class="step-number">3</div>
-        <div class="step-label">Confirmation</div>
+      <div class="flex-grow border-t-2 border-slate-300 w-8 sm:w-16"></div>
+      <div class="flex flex-col items-center flex-1 min-w-[90px]" [class.text-primary-dark]="currentStep === 2" [class.text-slate-500]="currentStep !== 2" [class.font-semibold]="currentStep === 2">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-white mb-1" [class.bg-primary]="currentStep >= 2" [class.bg-slate-400]="currentStep < 2">3</div>
+        <div class="text-xs sm:text-sm">Confirmation</div>
       </div>
     </div>
   </div>
 
-  <div class="checkout-content">
-    <div class="checkout-steps-content">
+  <div class="flex flex-col lg:flex-row gap-6 lg:gap-8">
+    <div class="flex-1 bg-white p-6 rounded-lg shadow-md">
       <!-- Step 1: Shipping Address -->
-      <div *ngIf="currentStep === 0" class="step-content">
-        <h2>Shipping Address</h2>
+      <div *ngIf="currentStep === 0" class="space-y-6">
+        <h2 class="text-xl font-bold text-primary-dark mb-4">Shipping Address</h2>
         
-        <div class="shipping-method-selector" *ngIf="!isLoading">
-          <h3>Shipping Method</h3>
+        <div *ngIf="!isLoading">
+          <h3 class="text-lg font-semibold mb-3 text-slate-700">Shipping Method</h3>
           <mat-button-toggle-group 
             [(ngModel)]="shippingMethod" 
             (change)="onShippingMethodChange(shippingMethod)"
-            class="shipping-methods"
+            class="flex flex-wrap gap-2 mb-6"
           >
             <mat-button-toggle 
               *ngFor="let method of getShippingMethods()" 
               [value]="method.id"
-              class="shipping-method"
+              class="flex-1 min-w-[150px] border border-primary-light rounded-md overflow-hidden"
             >
-              <div class="shipping-method-content">
-                <div class="shipping-method-name">{{ method.name }}</div>
-                <div class="shipping-method-details">
+              <div class="p-3 text-left w-full">
+                <div class="font-medium text-primary">{{ method.name }}</div>
+                <div class="text-sm text-slate-600">
                   {{ method.estimatedDays }} • {{ method.price | currency }}
                 </div>
               </div>
@@ -47,14 +47,14 @@
           </mat-button-toggle-group>
         </div>
         
-        <div class="address-selection" *ngIf="!isLoading">
-          <div class="address-options">
-            <h3>Select a shipping address</h3>
+        <div *ngIf="!isLoading">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h3 class="text-lg font-semibold text-slate-700">Select a shipping address</h3>
             <button 
               mat-button 
               color="primary" 
               (click)="openAddAddressDialog()"
-              class="add-address-button"
+              class="text-primary hover:bg-primary-light/10"
             >
               <mat-icon>add</mat-icon> Add New Address
             </button>
@@ -66,15 +66,15 @@
           ></app-saved-addresses>
         </div>
         
-        <div class="loading-overlay" *ngIf="isLoading">
+        <div class="flex flex-col items-center justify-center py-10" *ngIf="isLoading">
           <mat-spinner diameter="40"></mat-spinner>
-          <p>Loading your information...</p>
+          <p class="mt-4 text-slate-600">Loading your information...</p>
         </div>
       </div>
 
       <!-- Step 2: Payment -->
-      <div *ngIf="currentStep === 1" class="step-content">
-        <h2>Payment Method</h2>
+      <div *ngIf="currentStep === 1" class="space-y-6">
+        <h2 class="text-xl font-bold text-primary-dark mb-4">Payment Method</h2>
         
         <app-payment-method
           [paymentMethods]="paymentMethods"
@@ -86,13 +86,13 @@
       </div>
 
       <!-- Step 3: Review & Place Order -->
-      <div *ngIf="currentStep === 2" class="step-content">
-        <h2>Review Your Order</h2>
+      <div *ngIf="currentStep === 2" class="space-y-6">
+        <h2 class="text-xl font-bold text-primary-dark mb-4">Review Your Order</h2>
         
-        <div class="review-section">
-          <div class="review-block">
-            <h3>Shipping Address</h3>
-            <div class="review-content" *ngIf="selectedAddress">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 relative">
+            <h3 class="text-lg font-semibold text-slate-800 mb-2">Shipping Address</h3>
+            <div class="text-slate-700 text-sm" *ngIf="selectedAddress">
               <p>{{ selectedAddress.recipientName }}</p>
               <p>{{ selectedAddress.addressLine1 }}</p>
               <p *ngIf="selectedAddress.addressLine2">{{ selectedAddress.addressLine2 }}</p>
@@ -106,15 +106,15 @@
               mat-button 
               color="primary" 
               (click)="currentStep = 0"
-              class="edit-button"
+              class="absolute top-2 right-2 text-primary hover:bg-primary-light/10"
             >
               Edit
             </button>
           </div>
           
-          <div class="review-block">
-            <h3>Shipping Method</h3>
-            <div class="review-content">
+          <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 relative">
+            <h3 class="text-lg font-semibold text-slate-800 mb-2">Shipping Method</h3>
+            <div class="text-slate-700 text-sm">
               <p>{{ getShippingMethodName(shippingMethod) }}</p>
               <p>Estimated delivery: {{ getEstimatedDelivery(shippingMethod) }}</p>
             </div>
@@ -122,15 +122,15 @@
               mat-button 
               color="primary" 
               (click)="currentStep = 0"
-              class="edit-button"
+              class="absolute top-2 right-2 text-primary hover:bg-primary-light/10"
             >
               Edit
             </button>
           </div>
           
-          <div class="review-block">
-            <h3>Payment Method</h3>
-            <div class="review-content" *ngIf="selectedPaymentMethod">
+          <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 relative">
+            <h3 class="text-lg font-semibold text-slate-800 mb-2">Payment Method</h3>
+            <div class="text-slate-700 text-sm" *ngIf="selectedPaymentMethod">
               <p>{{ getPaymentMethodName(selectedPaymentMethod) }}</p>
               <p>Payment will be processed securely</p>
             </div>
@@ -138,7 +138,7 @@
               mat-button 
               color="primary" 
               (click)="currentStep = 1"
-              class="edit-button"
+              class="absolute top-2 right-2 text-primary hover:bg-primary-light/10"
             >
               Edit
             </button>
@@ -148,7 +148,7 @@
     </div>
     
     <!-- Order Summary -->
-    <div class="order-summary-container">
+    <div class="w-full lg:w-1/3">
       <app-order-summary 
         [orderData]="orderSummary"
         [showTitle]="true"
@@ -156,13 +156,13 @@
         [showActions]="false"
       ></app-order-summary>
       
-      <div class="checkout-actions">
+      <div class="flex flex-col gap-4 mt-6">
         <button 
           mat-stroked-button 
           color="primary" 
           (click)="goBack()"
           [disabled]="isProcessing"
-          class="back-button"
+          class="w-full text-primary border border-primary hover:bg-primary hover:text-white transition py-2"
         >
           <mat-icon>arrow_back</mat-icon> {{ currentStep === 0 ? 'Back to Cart' : 'Back' }}
         </button>
@@ -173,7 +173,7 @@
           color="primary" 
           (click)="onAddressSubmit()"
           [disabled]="!selectedAddress || isProcessing"
-          class="continue-button"
+          class="w-full bg-primary text-white hover:bg-primary-dark transition py-2"
         >
           Continue to {{ currentStep === 0 ? 'Payment' : 'Review' }}
           <mat-icon>arrow_forward</mat-icon>
@@ -185,11 +185,10 @@
           color="primary" 
           (click)="placeOrder()"
           [disabled]="!selectedPaymentMethod || isProcessing"
-          [class.spinner]="isProcessing"
-          class="place-order-button"
+          class="w-full bg-primary text-white hover:bg-primary-dark transition py-2 relative"
         >
           <span *ngIf="!isProcessing">Place Order</span>
-          <mat-spinner *ngIf="isProcessing" diameter="24"></mat-spinner>
+          <mat-spinner *ngIf="isProcessing" diameter="24" class="absolute left-1/2 -translate-x-1/2"></mat-spinner>
         </button>
       </div>
     </div>

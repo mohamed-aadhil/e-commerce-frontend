@@ -43,3 +43,16 @@
 }
 
 /* Add any additional global styles below */
+
+.user-menu-panel {
+  max-width: calc(100vw - 20px) !important;
+  overflow-x: hidden !important;
+}
+
+.notifications-menu-panel {
+  width: calc(100vw - 20px) !important; /* Force full width with margin */
+  max-width: calc(100vw - 20px) !important;
+  overflow-x: hidden !important;
+  left: 10px !important; /* Adjust positioning if needed */
+  right: 10px !important;
+}
